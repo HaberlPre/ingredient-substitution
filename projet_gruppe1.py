@@ -8,7 +8,7 @@
 
 import mysql.connector as mysql
 import numpy as np
-np.set_printoptions(threshold=2000)
+np.set_printoptions(threshold=10000)
 
 
 con = mysql.connect(user='allrecipes', #the user name for authentication
@@ -18,7 +18,27 @@ con = mysql.connect(user='allrecipes', #the user name for authentication
 
 cur=con.cursor()
 
-meal = "carbonara"
+meal = "pizza"
+
+def getParsedIng():
+    cur.execute("""SELECT `name_after_processing`, `new_ingredient_id` FROM `parsed_ingredients`
+                WHERE `new_ingredient_id` > 0 ORDER BY `new_ingredient_id`""")
+    ing = np.array(cur.fetchall(),dtype=str)
+    print(len(ing))
+    parsedArray = []
+    for i in range(len(ing)):
+        print(i)
+        if any(ing[i][1] in j for j in parsedArray):
+            pass
+        else:
+            parsedArray.append(np.array2string(ing[i]))
+    print(len(parsedArray))
+    return parsedArray
+
+#parsedArray = getParsedIng() #runtime horror
+parsedArray = np.loadtxt("parsedIng.txt")
+print(parsedArray)
+
 
 class getTopRankedRecipes():
     def __init__(self, inputString):
@@ -39,9 +59,9 @@ class getTopRankedRecipes():
             RList[i] = RList[i].replace("']", "")
         return RList
         
-t1 = getTopRankedRecipes(meal)
-t11 = t1.outRec
-print(t11)
+#t1 = getTopRankedRecipes(meal)
+#t11 = t1.outRec
+#print(t11)
 
 class getIngredientsFromRecipes():
     def __init__(self, recipes):
@@ -49,8 +69,10 @@ class getIngredientsFromRecipes():
         for i in range(len(recipes)):
             recipeID = recipes[i]
             print(recipeID)
-            cur.execute("""SELECT `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`, `ingredients` `i`
-                        WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ AND `i`.`id` = `p`.`id` """)
+            #cur.execute("""SELECT `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`, `ingredients` `i` 
+            #            WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ AND `i`.`id` = `p`.`id` """)
+            cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
+                        WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
             self.ing=np.array(cur.fetchall(),dtype=str)
             self.outIng=self.output(self.ing, i, AIList)
             print(self.ing)
@@ -60,7 +82,7 @@ class getIngredientsFromRecipes():
         
         return AIList
     
-t2 = getIngredientsFromRecipes(t11)
-t21 = t2.outIng
-print("sad")
-print(t21)
+#t2 = getIngredientsFromRecipes(t11)
+#t21 = t2.outIng
+#print("sad")
+#print(t21)
