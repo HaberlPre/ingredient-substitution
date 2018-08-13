@@ -36,7 +36,8 @@ def getParsedIng():
     return parsedArray
 
 #parsedArray = getParsedIng() #runtime horror
-parsedArray = np.loadtxt("parsedIng.txt")
+f = open('parsedIng.txt', 'r')
+parsedArray = f.read()
 print(parsedArray)
 
 
