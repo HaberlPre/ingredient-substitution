@@ -37,8 +37,20 @@ def getParsedIng():
 
 #parsedArray = getParsedIng() #runtime horror
 
-piArray = np.load('parsedIngArray.npy')
-print(piArray[0][1])
+"""
+ta = np.asarray(["['0% fat greek yogurt' '1']", "['1 percent milk' '2']"]) #shortend array
+tb = []
+for i in range(len(ta)):
+    print(i)
+    tc = ta[i].split("' '")
+    tc[0] = tc[0].replace("['", "")
+    tc[1] = tc[1].replace("']", "")
+    tb.append(tc)
+#print(tb)
+np.save('parsedIngArray', tb)
+"""
+parsedArray = np.load('parsedIngArray.npy')
+#print(parsedArray[1000])
 
 
 class getTopRankedRecipes():
@@ -60,30 +72,91 @@ class getTopRankedRecipes():
             RList[i] = RList[i].replace("']", "")
         return RList
         
-#t1 = getTopRankedRecipes(meal)
-#t11 = t1.outRec
+t1 = getTopRankedRecipes(meal)
+t11 = t1.outRec
 #print(t11)
 
 class getIngredientsFromRecipes():
     def __init__(self, recipes):
-        AIList=["" for x in range(len(recipes))]
+        #AIList=["" for x in range(len(recipes))]
+        AIList=[]
         for i in range(len(recipes)):
             recipeID = recipes[i]
-            print(recipeID)
+            #print(recipeID)
             #cur.execute("""SELECT `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`, `ingredients` `i` 
             #            WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ AND `i`.`id` = `p`.`id` """)
             cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
                         WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
             self.ing=np.array(cur.fetchall(),dtype=str)
-            self.outIng=self.output(self.ing, i, AIList)
-            print(self.ing)
+            self.outIng=self.output(self.ing, AIList)
+            #print(self.ing)
             
-    def output(self, ing, index, AIList):
-        AIList[index] = AIList[index]+str(ing)
+    def output(self, ing, AIList):
+        AIList.append(ing)
         
         return AIList
     
-#t2 = getIngredientsFromRecipes(t11)
-#t21 = t2.outIng
+t2 = getIngredientsFromRecipes(t11)
+t21 = t2.outIng
 #print("sad")
 #print(t21)
+
+class getParsedIngIdFromGIFR():
+    def __init__(self, Ring, Ping):
+        self.outArray = self.output(Ring, Ping)
+    
+    def output(self, Ring, Ping):
+        outArray = []
+        for i in range(len(Ring)):
+            #print("i: "+str(i))
+            for j in range(len(Ring[i])):
+                #print("j: "+str(j))
+                for k in range(len(Ping)):
+                    #print("k: "+str(k))
+                    if str(Ping[k][0]) in Ring[i][j]:
+                        outArray.append(Ping[k][1])
+        return outArray
+    
+t3 = getParsedIngIdFromGIFR(t21, parsedArray)
+t31 = t3.outArray
+#print(t31)
+
+class getParsedIngCount():
+    def __init__(self, PA):
+        self.outArray = self.output(PA)
+        
+    def output(self, PA):
+        uniqueIdArray  = []
+        for i in range(len(PA)):
+            if PA[i] not in uniqueIdArray:
+                uniqueIdArray.append(PA[i])
+                
+        outArray = [[0 for x in range(2)] for y in range(len(uniqueIdArray))] 
+        for i in range(len(outArray)):
+            outArray[i][0] = uniqueIdArray[i]
+            for j in range(len(PA)):
+                if outArray[i][0] == PA[j]:
+                    outArray[i][1] = outArray[i][1] + 1
+                
+        return outArray
+
+t4 = getParsedIngCount(t31)
+t41 = t4.outArray
+#print(t41)
+
+class getMainIng(): #unsortiert!!!
+    def __init__(self, PAC, crit):
+        self.outArray = self.output(PAC, crit)
+    
+    def output(self, PAC, crit):
+        outArray = []         
+        for i in range(len(PAC)):
+            if int(PAC[i][1]) >= crit:
+                outArray.append(PAC[i])    
+        
+        return outArray
+        
+crit = 4
+t5 = getMainIng(t41, crit)
+t51 = t5.outArray #[id, count]
+print(t51)
