@@ -155,8 +155,15 @@ class getMainIng(): #unsortiert!!!
                 outArray.append(PAC[i])    
         
         return outArray
-        
-crit = 4
+       
+def getCrit(PAC):
+    sum = 0
+    for i in range(len(PAC)):
+        sum = sum+PAC[i][1]
+    crit = sum/len(PAC)
+    return round(2*crit)
+    
+crit = getCrit(t41)
 t5 = getMainIng(t41, crit)
 t51 = t5.outArray #[id, count]
 print(t51)
