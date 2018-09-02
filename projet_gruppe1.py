@@ -2,7 +2,7 @@
 # Tanja Gehr, 1861493
 # Raphael Wagner, 1829214
 # Lucas Haberl, 1862621
-#Silvia Ivanova, 1817043
+#Silvia Ivanova, 
 
 
 
@@ -113,22 +113,30 @@ class getGoodIngFromRecipes():
     def __init__(self, recipes):
 
         goodIng=[]
+        a=False
         for i in range(len(recipes)):
             recipeID = recipes[i]
             
             cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
                         WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
             self.ingredients=np.array(cur.fetchall(),dtype=str)
+           # print(self.ingredients[0][0])
             
+            if "olive oil" in self.ingredients[0][0]: 
+                a=True
+            else:
+                a=False
             
-            cur.execute("""SELECT `i`.`fsa_score` FROM `feature_table` `i` 
-                        WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
-            
-            self.scores=np.array(cur.fetchall())
-            
-            self.resultIng=self.res(self.ingredients, self.scores, goodIng)
-           
-    def res(self, ingredients, scores, goodIng):
+            if a:
+               print()#self.ingredients[0][0]
+               cur.execute("""SELECT `i`.`rank` FROM `distinct_parsed_ingredients` `i` 
+                           WHERE `i`.`ingredient_name` = '%s' """ % self.ingredients[0][0] + """ """)
+               self.scores=np.array(cur.fetchall())
+               print(self.scores)
+               
+               self.resultIng=self.output(self.ingredients, self.scores, goodIng)
+        
+    def output(self, ingredients, scores, goodIng):
         
         #n=self.ingredients[0]
         goodIng.append(self.ingredients[0])
@@ -141,6 +149,14 @@ ti = getGoodIngFromRecipes(t11)
 tin = ti.resultIng
 #print("sad")
 #print(tin)
+
+
+#%%  
+
+if "blah" in "lala blah aha": 
+    print("true")
+else:
+    print("false")
 
 #%% 
 class getParsedIngIdFromGIFR():
