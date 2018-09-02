@@ -2,10 +2,11 @@
 # Tanja Gehr, 1861493
 # Raphael Wagner, 1829214
 # Lucas Haberl, 1862621
-#Silvia Ivanova, 
+#Silvia Ivanova, 1817043
 
 
 
+#%% 
 import mysql.connector as mysql
 import numpy as np
 np.set_printoptions(threshold=10000)
@@ -18,6 +19,7 @@ con = mysql.connect(user='allrecipes', #the user name for authentication
 
 cur=con.cursor()
 
+#%% 
 meal = "pizza"
 
 def getParsedIng():
@@ -35,6 +37,7 @@ def getParsedIng():
     print(len(parsedArray))
     return parsedArray
 
+#%% 
 #parsedArray = getParsedIng() #runtime horror
 
 """
@@ -53,6 +56,7 @@ parsedArray = np.load('parsedIngArray.npy')
 #print(parsedArray[1000])
 
 
+#%% 
 class getTopRankedRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
@@ -71,18 +75,20 @@ class getTopRankedRecipes():
             RList[i] = RList[i].replace("['", "")
             RList[i] = RList[i].replace("']", "")
         return RList
-        
+ 
+#%%        
 t1 = getTopRankedRecipes(meal)
 t11 = t1.outRec
 #print(t11)
 
+#%% 
 class getIngredientsFromRecipes():
     def __init__(self, recipes):
         #AIList=["" for x in range(len(recipes))]
         AIList=[]
         for i in range(len(recipes)):
             recipeID = recipes[i]
-            #print(recipeID)
+            print(recipeID)
             #cur.execute("""SELECT `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`, `ingredients` `i` 
             #            WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ AND `i`.`id` = `p`.`id` """)
             cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
@@ -95,12 +101,48 @@ class getIngredientsFromRecipes():
         AIList.append(ing)
         
         return AIList
-    
+
+#%%     
 t2 = getIngredientsFromRecipes(t11)
 t21 = t2.outIng
 #print("sad")
-#print(t21)
+print(t21)
 
+#%% 
+class getGoodIngFromRecipes():
+    def __init__(self, recipes):
+
+        goodIng=[]
+        for i in range(len(recipes)):
+            recipeID = recipes[i]
+            
+            cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
+                        WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
+            self.ingredients=np.array(cur.fetchall(),dtype=str)
+            
+            
+            cur.execute("""SELECT `i`.`fsa_score` FROM `feature_table` `i` 
+                        WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
+            
+            self.scores=np.array(cur.fetchall())
+            
+            self.resultIng=self.res(self.ingredients, self.scores, goodIng)
+           
+    def res(self, ingredients, scores, goodIng):
+        
+        #n=self.ingredients[0]
+        goodIng.append(self.ingredients[0])
+        #print(self.ingredients[0])
+        return goodIng
+
+#%%  
+
+ti = getGoodIngFromRecipes(t11)
+tin = ti.resultIng
+#print("sad")
+#print(tin)
+
+#%% 
 class getParsedIngIdFromGIFR():
     def __init__(self, Ring, Ping):
         self.outArray = self.output(Ring, Ping)
@@ -116,11 +158,13 @@ class getParsedIngIdFromGIFR():
                     if str(Ping[k][0]) in Ring[i][j]:
                         outArray.append(Ping[k][1])
         return outArray
-    
+ 
+#%%    
 t3 = getParsedIngIdFromGIFR(t21, parsedArray)
 t31 = t3.outArray
 #print(t31)
 
+#%% 
 class getParsedIngCount():
     def __init__(self, PA):
         self.outArray = self.output(PA)
@@ -144,6 +188,7 @@ t4 = getParsedIngCount(t31)
 t41 = t4.outArray
 #print(t41)
 
+#%% 
 class getMainIng(): #unsortiert!!!
     def __init__(self, PAC, crit):
         self.outArray = self.output(PAC, crit)
@@ -167,3 +212,5 @@ crit = getCrit(t41)
 t5 = getMainIng(t41, crit)
 t51 = t5.outArray #[id, count]
 print(t51)
+
+#%% 
