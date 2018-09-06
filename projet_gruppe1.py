@@ -77,8 +77,8 @@ class getTopRankedRecipes():
         return RList
  
 #%%        
-t1 = getTopRankedRecipes(meal)
-t11 = t1.outRec
+topRankedRecipesClass = getTopRankedRecipes(meal)
+topRankedRecipes = topRankedRecipesClass.outRec #format: liste mit ids = links
 #print(t11)
 
 #%% 
@@ -88,7 +88,7 @@ class getIngredientsFromRecipes():
         AIList=[]
         for i in range(len(recipes)):
             recipeID = recipes[i]
-            print(recipeID)
+            #print(recipeID)
             #cur.execute("""SELECT `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`, `ingredients` `i` 
             #            WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ AND `i`.`id` = `p`.`id` """)
             cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
@@ -103,10 +103,10 @@ class getIngredientsFromRecipes():
         return AIList
 
 #%%     
-t2 = getIngredientsFromRecipes(t11)
-t21 = t2.outIng
+ingFromTopRecipesClass = getIngredientsFromRecipes(topRankedRecipes)
+ingFromTopRecipes = ingFromTopRecipesClass.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
 #print("sad")
-print(t21)
+#print(t21)
 
 #%% 
 
@@ -128,8 +128,8 @@ class getParsedIngIdFromGIFR():
         return outArray
  
 #%%    
-t3 = getParsedIngIdFromGIFR(t21, parsedArray)
-t31 = t3.outArray
+parsedIngFromTopRecipesClass = getParsedIngIdFromGIFR(ingFromTopRecipes, parsedArray)
+parsedIngFromTopRecipes = parsedIngFromTopRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
 #print(t31)
 
 #%% 
@@ -152,8 +152,8 @@ class getParsedIngCount():
                 
         return outArray
 
-t4 = getParsedIngCount(t31)
-t41 = t4.outArray
+parsedIngCountFromTopRecipesClass = getParsedIngCount(parsedIngFromTopRecipes)
+parsedIngCountFromTopRecipes = parsedIngCountFromTopRecipesClass.outArray #liste mit new ing id und häufigkeit
 #print(t41)
 
 #%% 
@@ -176,9 +176,9 @@ def getCrit(PAC):
     crit = sum/len(PAC)
     return round(2*crit)
     
-crit = getCrit(t41)
-t5 = getMainIng(t41, crit)
-t51 = t5.outArray #[id, count]
-print(t51)
+crit = getCrit(parsedIngCountFromTopRecipes) #kritische zahl, ab wann ein ing main wird
+MainTopIngClass = getMainIng(parsedIngCountFromTopRecipes, crit)
+MainTopIng = MainTopIngClass.outArray #format: liste mit new ing id, count
+print(MainTopIng)
 
 #%% 
