@@ -105,7 +105,6 @@ class getIngredientsFromRecipes():
 #%%     
 ingFromTopRecipesClass = getIngredientsFromRecipes(topRankedRecipes)
 ingFromTopRecipes = ingFromTopRecipesClass.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
-
 #print(ingFromTopRecipes)
 
 #%% 
@@ -130,7 +129,6 @@ class getParsedIngIdFromGIFR():
 #%%    
 parsedIngFromTopRecipesClass = getParsedIngIdFromGIFR(ingFromTopRecipes, parsedArray)
 parsedIngFromTopRecipes = parsedIngFromTopRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
-
 #print(parsedIngFromTopRecipes)
 
 #%% 
