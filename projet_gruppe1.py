@@ -77,9 +77,9 @@ class getTopRankedRecipes():
         return RList
  
 #%%        
-t1 = getTopRankedRecipes(meal)
-t11 = t1.outRec
-#print(t11)
+topRankedRecipesClass = getTopRankedRecipes(meal)
+topRankedRecipes = topRankedRecipesClass.outRec #format: liste mit ids = links
+#print(topRankedRecipes)
 
 #%% 
 class getIngredientsFromRecipes():
@@ -88,7 +88,7 @@ class getIngredientsFromRecipes():
         AIList=[]
         for i in range(len(recipes)):
             recipeID = recipes[i]
-            print(recipeID)
+            #print(recipeID)
             #cur.execute("""SELECT `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`, `ingredients` `i` 
             #            WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ AND `i`.`id` = `p`.`id` """)
             cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
@@ -103,10 +103,10 @@ class getIngredientsFromRecipes():
         return AIList
 
 #%%     
-t2 = getIngredientsFromRecipes(t11)
-t21 = t2.outIng
-#print("sad")
-print(t21)
+ingFromTopRecipesClass = getIngredientsFromRecipes(topRankedRecipes)
+ingFromTopRecipes = ingFromTopRecipesClass.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
+
+#print(ingFromTopRecipes)
 
 #%% 
 
@@ -128,9 +128,10 @@ class getParsedIngIdFromGIFR():
         return outArray
  
 #%%    
-t3 = getParsedIngIdFromGIFR(t21, parsedArray)
-t31 = t3.outArray
-#print(t31)
+parsedIngFromTopRecipesClass = getParsedIngIdFromGIFR(ingFromTopRecipes, parsedArray)
+parsedIngFromTopRecipes = parsedIngFromTopRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
+
+#print(parsedIngFromTopRecipes)
 
 #%% 
 class getParsedIngCount():
@@ -152,9 +153,9 @@ class getParsedIngCount():
                 
         return outArray
 
-t4 = getParsedIngCount(t31)
-t41 = t4.outArray
-#print(t41)
+parsedIngCountFromTopRecipesClass = getParsedIngCount(parsedIngFromTopRecipes)
+parsedIngCountFromTopRecipes = parsedIngCountFromTopRecipesClass.outArray #liste mit new ing id und häufigkeit
+#print(parsedIngCountFromTopRecipes)
 
 #%% 
 class getMainIng(): #unsortiert!!!
@@ -176,9 +177,27 @@ def getCrit(PAC):
     crit = sum/len(PAC)
     return round(2*crit)
     
-crit = getCrit(t41)
-t5 = getMainIng(t41, crit)
-t51 = t5.outArray #[id, count]
-print(t51)
+crit = getCrit(parsedIngCountFromTopRecipes) #kritische zahl, ab wann ein ing main wird
+MainTopIngClass = getMainIng(parsedIngCountFromTopRecipes, crit)
+MainTopIng = MainTopIngClass.outArray #format: liste mit new ing id, count
+#print(MainTopIng)
 
 #%% 
+
+#gets the [id, probabiliry] of the ing that are not in main ing
+class getNotMainIng():
+    def __init__(self, parsedIng, mainIng):
+        self.outArray = self.output(parsedIng, mainIng)
+    
+    def output(self, parsedIng, mainIng):
+        outArray = [] 
+        boolContained = [s in mainIng for s in  parsedIng] #array with boolean values if some ing of the current recipe is in the main ing or not 
+        #print(boolContained)
+        for e in range(len(boolContained)):
+            if not boolContained[e]: 
+                outArray.append(parsedIng[e])
+        return outArray
+
+notMainNotTopIngClass = getNotMainIng(parsedIngCountFromTopRecipes, MainTopIng)
+notMainTopIng = notMainNotTopIngClass.outArray
+print(notMainTopIng)
