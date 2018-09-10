@@ -57,7 +57,7 @@ parsedArray = np.load('parsedIngArray.npy')
 
 
 #%% 
-class getRankedRecipes():
+class getBestRankedRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
@@ -77,9 +77,9 @@ class getRankedRecipes():
         return RList
  
 #%%        
-rankedBestRecipesClass = getRankedRecipes(meal)
-rankedBestRecipes = rankedBestRecipesClass.outRec #format: liste mit ids = links
-#print(rankedBestRecipes)
+bestRankedRecipesClass = getBestRankedRecipes(meal)
+bestRankedRecipes = bestRankedRecipesClass.outRec #format: liste mit ids = links
+#print(bestRankedRecipes)
 
 
 #%% 
@@ -130,14 +130,14 @@ class getRecWho():
         return RList
   
 #%%        
-bestFsa = getRecWho(rankedBestRecipes)
-bestFsaRec = bestFsa.outRec #array with the who_scores of each recipe from the rankedBestRecipes
+bestFsa = getRecWho(bestRankedRecipes)
+bestFsaRec = bestFsa.outRec #array with the who_scores of each recipe from the best recipes
 #print(bestFsaRec)
 
  
 #%%
 worstFsa = getRecWho(worstRankedRecipes)
-worstFsaRec = worstFsa.outRec #array with the who_scores of each recipe from the rankedBestRecipes
+worstFsaRec = worstFsa.outRec #array with the who_scores of each recipe from the worst recipes
 #print(worstFsaRec)
 
 #%% 
@@ -161,7 +161,7 @@ class getIngredientsFromRecipes():
         
         return AIList
 #%%     
-ingFromBestRecipesClass = getIngredientsFromRecipes(rankedBestRecipes)
+ingFromBestRecipesClass = getIngredientsFromRecipes(bestRankedRecipes)
 ingFromBestRecipes = ingFromBestRecipesClass.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
 #print(ingFromBestRecipes)
 
@@ -204,13 +204,13 @@ class getParsedIngIdFromGIFR():
         return outArray
  
 #%%    
-parsedingFromBestRecipesClass = getParsedIngIdFromGIFR(ingFromBestRecipes, parsedArray)
-parsedingFromBestRecipes = parsedingFromBestRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
-#print(parsedingFromBestRecipes)
+parsedIngFromBestRecipesClass = getParsedIngIdFromGIFR(ingFromBestRecipes, parsedArray)
+parsedIngFromBestRecipes = parsedIngFromBestRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
+#print(parsedIngFromBestRecipes)
 
 arrBestWhoId=[]
 for i in range(len(bestFsaRec)):
-    List = np.append(bestFsaRec[i], parsedingFromBestRecipes[i])
+    List = np.append(bestFsaRec[i], parsedIngFromBestRecipes[i])
     arrBestWhoId.append([List])  # [bestFsa ing_id]
 #print(arrBestWhoId) 
 
@@ -247,7 +247,7 @@ class getParsedIngCount():
         return outArray
 
 #%% 
-parsedIngCountFromBestRecipesClass = getParsedIngCount(parsedingFromBestRecipes)
+parsedIngCountFromBestRecipesClass = getParsedIngCount(parsedIngFromBestRecipes)
 parsedIngCountBestRec = parsedIngCountFromBestRecipesClass.outArray #liste mit new ing id und häufigkeit
 #print(parsedIngCountBestRec)
 
@@ -291,21 +291,28 @@ def getCrit(PAC):
 
 #%%     
 critBestRec = getCrit(parsedIngCountBestRec) #kritische zahl, ab wann ein ing main wird
-MainIngBestRec = getMainIng(parsedIngCountBestRec, critBestRec)
-MainBestIng = MainIngBestRec.outArray #format: liste mit new ing id, count
-#print(MainBestIng[0])
+mainIngBestRecClass = getMainIng(parsedIngCountBestRec, critBestRec)
+mainIngBestRec = mainIngBestRecClass.outArray #format: liste mit new ing id, count
+#print(mainIngBestRec)
 arrBestIdCountFsa=[]
-for i in range(len(ingFromBestRecipes)):
-    List = np.append(parsedIngCountBestRec[i], arrBestWhoIngName[i][0][0])
+for i in range(len(mainIngBestRec)):
+    List = np.append(mainIngBestRec[i], arrBestWhoIngName[i][0][0])
     arrBestIdCountFsa.append([List])
 #print(arrBestIdCountFsa)
 
 
+arrBestIdCountFsaList = np.array(arrBestIdCountFsa).tolist()
+#print(arrBestIdCountFsa)
+
+
+
+
 #%% 
+
 critWorstRec = getCrit(parsedIngCountWorstRec) #kritische zahl, ab wann ein ing main wird
 worstMainIngClass = getMainIng(parsedIngCountWorstRec, critWorstRec)
 worstMainIng = worstMainIngClass.outArray #format: liste mit new ing id, count
-#print(worstMainIng[0])
+#print(mainIngBestRec[0])
 arrWorstIdCountFsa=[]
 for i in range(len(ingFromWorstRecipes)):
     List = np.append(parsedIngCountWorstRec[i], arrWorstWhoIngName[i][0][0])
@@ -317,47 +324,55 @@ arrWorstIdCountFsa=sorted(arrWorstIdCountFsaList, key = lambda x: int(x[1]))
 #print(arrWorstIdCountFsa)
 
 
+
 #%% 
 #gets the [ingr_id, ingr_probability] of the ing that are not in main ing
 class getRestIng():
-    def __init__(self, parsedIng, mainIng):
-        self.outArray = self.output(parsedIng, mainIng)
+    def __init__(self, PAC, critBestRec):
+        self.outArray = self.output(PAC, critBestRec)
     
-    def output(self, parsedIng, mainIng):
-        outArray = [] 
-        boolContained = [s in mainIng for s in  parsedIng] #array with boolean values if some ing of the current recipe is in the main ing or not 
-        #print(boolContained)
-        for e in range(len(boolContained)):
-            if not boolContained[e]: 
-                outArray.append(parsedIng[e])
+    def output(self, PAC, critBestRec):
+        outArray = []         
+        for i in range(len(PAC)):
+            if int(PAC[i][1]) < critBestRec:
+                outArray.append(PAC[i])  
         return outArray
- 
+       
+def getCrit(PAC):
+    sum = 0
+    for i in range(len(PAC)):
+        sum = sum+PAC[i][1]
+    critBestRec = sum/len(PAC)
+    return round(2*critBestRec)
+
+#%%     
+critBestRec = getCrit(parsedIngCountBestRec) #kritische zahl, ab wann ein ing main wird
+restIngBestRecClass = getRestIng(parsedIngCountBestRec, critBestRec)
+restIngBestRec = restIngBestRecClass.outArray #format: liste mit new ing id, count
+#print(restIngBestRec)
+
+
+arrBestIdCountFsaRest=[]
+for i in range(len(arrBestWhoIngName)):
+    List = np.append(restIngBestRec[i], arrBestWhoIngName[i][0][0])
+    arrBestIdCountFsaRest.append([List])
+#print(arrBestIdCountFsaRest)
+
+arrBestIdCountFsaRestList = np.array(arrBestIdCountFsaRest).tolist()
+print(arrBestIdCountFsaRestList)
+
+
 #%% 
-restBestIngClass = getRestIng(parsedIngCountBestRec, arrBestIdCountFsa)
-restBestIng = restBestIngClass.outArray
-#print((restBestIng[1]))
+critWorstRecRest = getCrit(parsedIngCountWorstRec) #kritische zahl, ab wann ein ing main wird
+restWorstMainIngClass = getRestIng(parsedIngCountWorstRec, critWorstRec)
+restWorstMainIng = restWorstMainIngClass.outArray #format: liste mit new ing id, count
 
-arrBestIdCountFsa=[]
-for i in range(len(restBestIng)):
-    List = np.append(restBestIng[i], arrBestWhoIngName[0])
-    arrBestIdCountFsa.append(List[0:3])
-#print(arrBestIdCountFsa)
-    
-bestIngList = np.array(arrBestIdCountFsa).tolist()
-print(bestIngList)
+arrWorstIdCountFsaRest=[]
+for i in range(len(arrWorstWhoIngName)):
+    List = np.append(parsedIngCountWorstRec[i], arrWorstWhoIngName[i][0][0])
+    arrWorstIdCountFsaRest.append(List)
+#print(arrWorstIdCountFsaRest)
 
-#%% 
-restWorstIngClass = getRestIng(parsedIngCountWorstRec, arrWorstIdCountFsa)
-worstMainIng = restWorstIngClass.outArray
-#print(worstMainIng)
-
-
-arrWorstIdCountFsa=[]
-for i in range(len(worstMainIng)):
-    List = np.append(worstMainIng[i], arrWorstWhoIngName[0])
-    arrWorstIdCountFsa.append(List[0:3])
-#print(arrWorstIdCountFsa)
-
-worstIngList = np.array(arrWorstIdCountFsa).tolist()
-
-print(worstIngList)
+arrWorstIdCountFsaListRest = np.array(arrWorstIdCountFsa).tolist()
+arrWorstIdCountFsa=sorted(arrWorstIdCountFsaListRest, key = lambda x: int(x[1]))
+print(arrWorstIdCountFsaList)
