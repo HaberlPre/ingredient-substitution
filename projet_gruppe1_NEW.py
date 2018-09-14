@@ -88,7 +88,7 @@ class getHealthyRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
-                    WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `who_score` >= 3 AND `number_of_ratings` > 10
+                    WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `number_of_ratings` > 10
                     ORDER BY `who_score` DESC LIMIT 20""") #limit shortens it significantly, currently for ease of use
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
@@ -113,7 +113,7 @@ class getNotHealthyRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
-                    WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `who_score` <= 3 AND `number_of_ratings` > 10
+                    WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `number_of_ratings` > 10
                     ORDER BY `who_score` ASC LIMIT 20""") #limit shortens it significantly, currently for ease of use 
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
