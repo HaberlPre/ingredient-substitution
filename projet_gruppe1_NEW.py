@@ -220,22 +220,22 @@ for i in range(len(ingNotHealthyRecipes)):
 #%% 
 
 class getParsedIngIdFromGIFR():
-    def __init__(self, Ring, Ping, arrBestWhoIngName):
-        self.outArray = self.output(Ring, Ping, arrBestWhoIngName)
+    def __init__(self, Ring, Ping, whoIngName):
+        self.outArray = self.output(Ring, Ping, whoIngName)
     
-    def output(self, Ring, Ping, arrBestWhoIngName):
+    def output(self, Ring, Ping, whoIngName):
         outArray = []
         res=[]
         #print(arrBestWhoIngName[8][1:len(arrBestWhoIngName)])
-        for i in range(len(arrBestWhoIngName)):
-            for j in range(len(arrBestWhoIngName[i])-1):
+        for i in range(len(whoIngName)):
+            for j in range(len(whoIngName[i])-1):
                 #print("j: "+str(j))
                 for k in range(len(Ping)):
                     #print("k: "+str(k))
-                    if str(Ping[k][0]) in arrBestWhoIngName[i][j+1] :
+                    if str(Ping[k][0]) in [whoIngName[i][j+1]] :
                         outArray.append(Ping[k][1])
                         #outArray.append(Ping[k][0])
-                        outArray.append(arrBestWhoIngName[i][0])
+                        outArray.append(whoIngName[i][0])
         for m in range(0,len(outArray),2):
             res.append(outArray[m:2+m])
         return res
