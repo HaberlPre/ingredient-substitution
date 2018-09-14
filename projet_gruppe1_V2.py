@@ -7,7 +7,7 @@
 
 
 #%% 
-
+import time
 import mysql.connector as mysql
 import numpy as np
 np.set_printoptions(threshold=10000)
@@ -21,6 +21,8 @@ con = mysql.connect(user='allrecipes', #the user name for authentication
 cur=con.cursor()
 
 #%% 
+t0 = time.time()
+
 meal = "pizza"
 
 def getParsedIng():
@@ -114,7 +116,7 @@ class getNotHealthyRecipes():
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
                     WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `who_score` <= 3 AND `number_of_ratings` > 10
-                    ORDER BY `who_score` ASC LIMIT 20""") #limit shortens it significantly, currently for ease of use
+                    ORDER BY `who_score` ASC LIMIT 20""") #limit shortens it significantly, currently for ease of use 
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -246,7 +248,9 @@ class getParsedIngIdFromGIFR():
                         outArray.append(Ping[k][1])
         return outArray
  
-#%%    
+#%% 
+tparsedArray0 = time.time()
+        
 parsedIngFromTopRecipesClass = getParsedIngIdFromGIFR(ingFromTopRecipes, parsedArray)
 parsedIngFromTopRecipes = parsedIngFromTopRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
 #print(parsedIngFromTopRecipes)
@@ -280,6 +284,7 @@ for i in range(len(worstWhoRec)):
     arrWorstWhoId.append(List)  # [bestFsa ing_id]
 #print(arrWorstWhoId) 
 
+tparsedArray1 = time.time()
 
 #%% 
 class getParsedIngCount():
@@ -476,50 +481,58 @@ arrWorstIdCountWhoRestList = np.array(arrWorstIdCountWhoRest).tolist() #ListRest
 
 #%%
 #adds aisle to ing array
-"""output: new ing id, count, who score, aisle"""
-class addAisle():
+"""output: new ing id, count, who score, aisle, name"""
+class addAisleAndName():
     def __init__(self, ingArray): #nicht perfekt
         for i in range(len(ingArray)):
             IngID = int(ingArray[i][0])
-            cur.execute("""SELECT `p`.`aisle` FROM `parsed_ingredients` `p` 
+            cur.execute("""SELECT `p`.`aisle`, `p`.`name_after_processing` FROM `parsed_ingredients` `p` 
                         WHERE `p`.`new_ingredient_id` = '%s' """ % IngID + """ 
                         LIMIT 1""")
-            self.aisle = str(np.array(cur.fetchall(), dtype=str).tolist())
-            self.outIng = self.output(self.aisle, ingArray, i)
-            #print(self.aisle)
+            self.data = str(np.array(cur.fetchall(), dtype=str).tolist())
+            self.outIng = self.output(self.data, ingArray, i)
+            #print(self.data)
             
-    def output(self, aisle, ingArray, i):
+    def output(self, data, ingArray, i):
+        aisle, name = data.split("', '")
         aisle = aisle.replace("[['", "")
-        aisle = aisle.replace("']]", "")
+        name = name.replace("']]", "")
         ingArray[i].append(aisle)
+        ingArray[i].append(name)
         return ingArray
         
 #%%
-mainTopRankedAisleClass = addAisle(arrTopIngCountWhoMainList)
-mainTopRankedAisle = mainTopRankedAisleClass.outIng
-print(mainTopRankedAisle)
+mainTopRankedAisleAndNameClass = addAisleAndName(arrTopIngCountWhoMainList)
+mainTopRankedAisleAndName = mainTopRankedAisleAndNameClass.outIng
+print(mainTopRankedAisleAndName)
 print("--------------------------------------------------------------------------------------------------------------")
 
-restTopRankedAisleClass = addAisle(arrTopRankedIdCountWhoRestList)
-restTopRankedAisle = restTopRankedAisleClass.outIng
-print(restTopRankedAisle)
+restTopRankedAisleAndNameClass = addAisleAndName(arrTopRankedIdCountWhoRestList)
+restTopRankedAisleAndName = restTopRankedAisleAndNameClass.outIng
+print(restTopRankedAisleAndName)
 print("--------------------------------------------------------------------------------------------------------------")
 
-mainHealthyAisleClass = addAisle(arrBestIdCountWhoMainList)
-mainHealthyAisle = mainHealthyAisleClass.outIng
-print(mainHealthyAisle)
+mainHealthyAisleAndNameClass = addAisleAndName(arrBestIdCountWhoMainList)
+mainHealthyAisleAndName = mainHealthyAisleAndNameClass.outIng
+print(mainHealthyAisleAndName)
 print("--------------------------------------------------------------------------------------------------------------")
 
-restHealthyAisleClass = addAisle(arrBestIdCountWhoRestList)
-restHealthyAisle = restHealthyAisleClass.outIng
-print(restHealthyAisle)
+restHealthyAisleAndNameClass = addAisleAndName(arrBestIdCountWhoRestList)
+restHealthyAisleAndName = restHealthyAisleAndNameClass.outIng
+print(restHealthyAisleAndName)
 print("--------------------------------------------------------------------------------------------------------------")
 
-mainNotHealthyAisleClass = addAisle(arrWorstIdCountWhoMainList)
-mainNotHealthyAisle = mainNotHealthyAisleClass.outIng
-print(mainNotHealthyAisle)
+mainNotHealthyAisleAndNameClass = addAisleAndName(arrWorstIdCountWhoMainList)
+mainNotHealthyAisleAndName = mainNotHealthyAisleAndNameClass.outIng
+print(mainNotHealthyAisleAndName)
 print("--------------------------------------------------------------------------------------------------------------")
 
-restNotHealthyAisleClass = addAisle(arrWorstIdCountWhoRestList)
-restNotHealthyAisle = restNotHealthyAisleClass.outIng
-print(restNotHealthyAisle)
+restNotHealthyAisleAndNameClass = addAisleAndName(arrWorstIdCountWhoRestList)
+restNotHealthyAisleAndName = restNotHealthyAisleAndNameClass.outIng
+print(restNotHealthyAisleAndName)
+#%%
+tstop = time.time()
+print("full time:")
+print(tstop-t0)
+print("parsedArrayTime:")
+print(tparsedArray1 - tparsedArray0)
