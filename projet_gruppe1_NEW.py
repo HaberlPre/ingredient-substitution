@@ -160,7 +160,7 @@ class getRecWho():
             recIDStr = recIDStr.replace("['", "")
             recIDStr = recIDStr.replace("']", "")
             cur.execute("""SELECT  `who_score` FROM `feature_table`
-                        WHERE `recipe_id` = """ + recIDStr + """ """)  #get the recipe who_score from feature_rable
+                        WHERE `recipe_id` = """ + recIDStr + """ """)  #get the recipe who_score from feature_rable, wieso hier + statt % ?
             self.rec=np.array(cur.fetchall(),dtype=str)
             RList.append(self.rec[0])
         self.outRec=self.output(RList)
@@ -183,7 +183,7 @@ class getIngredientsFromRecipes():
             #            WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ AND `i`.`id` = `p`.`id` """)
             cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
                         WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
-            self.ing=np.array(cur.fetchall(),dtype=str)
+            self.ing=np.array(cur.fetchall(), dtype=str)
             self.outIng=self.output(self.ing, AIList)
             #print(self.ing)
             
@@ -193,27 +193,25 @@ class getIngredientsFromRecipes():
         return AIList
 
 #%% 
-
 class getParsedIngIdFromGIFR():
     def __init__(self, Ring, Ping, whoIngName):
         self.outArray = self.output(Ring, Ping, whoIngName)
     
     def output(self, Ring, Ping, whoIngName):
-        outArray = []
-        res=[]
-        #print(arrBestWhoIngName[8][1:len(arrBestWhoIngName)])
-        for i in range(len(whoIngName)):
-            for j in range(len(whoIngName[i])-1):
-                #print("j: "+str(j))
-                for k in range(len(Ping)):
-                    #print("k: "+str(k))
-                    if str(Ping[k][0]) in [whoIngName[i][j+1]] :
-                        outArray.append(Ping[k][1])
-                        #outArray.append(Ping[k][0])
-                        outArray.append(whoIngName[i][0])
-        for m in range(0,len(outArray),2):
-            res.append(outArray[m:2+m])
-        return res
+        returnArray=[]
+        who = whoIngName[0][0]
+        for i in range(len(Ring[0])):
+            if i>1: #i>0, sql crash mit "UNCLE BEN'S® Ready Rice® Jasmine"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                ingName=Ring[0][i][0]
+                cur.execute("""SELECT  `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`
+                    WHERE `p`.`original` LIKE '%s' """ % ingName + """
+                    LIMIT 1""") #limit shortens it significantly, currently for ease of use,  AND `f`.`number_of_ratings` > 10 raus, chrashte bei nur einem rezept
+                ingId=np.array(cur.fetchall(), dtype=str)
+                List=[]
+                List.append(ingId[0][0])
+                List.append(who)
+                returnArray.append(List)
+        return(returnArray)
 
 #%%
 class getParsedIngCount():
@@ -275,7 +273,7 @@ class addAisleAndName():
         for i in range(len(ingArray)):
             IngID = int(ingArray[i][0])
             cur.execute("""SELECT `p`.`aisle`, `p`.`name_after_processing` FROM `parsed_ingredients` `p` 
-                        WHERE `p`.`new_ingredient_id` = '%s' """ % IngID + """ 
+                        WHERE `p`.`new_ingredient_id` LIKE '%s' """ % IngID + """ 
                         LIMIT 1""")
             self.data = str(np.array(cur.fetchall(), dtype=str).tolist())
             self.outIng = self.output(self.data, ingArray, i)
@@ -346,16 +344,16 @@ def getWholeParsedIngList(recArray, sub):
         
         ingFromArrayC = getIngredientsFromRecipes(recArray)
         ingFromArray = ingFromArrayC.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
-        arrIngName=[]
+        arrIngName=[] #eig unnötig
         for i in range(len(ingFromArray)):
             List = np.append(WhoArray[i], ingFromArray[i])
             arrIngName.append(List)
         
-        t0 = time.time()
-        parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, parsedArray, arrIngName)
+        #t0 = time.time()
+        parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, parsedArray, arrIngName) #arrIngArray eig nur index 0 nötig (who score)
         parsedIngArray = parsedIngArrayC.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
-        t1 = time.time()
-        print(t1-t0)
+        #t1 = time.time()
+        #print(t1-t0)
         
         parsedIngArrayCountC = getParsedIngCount(parsedIngArray)
         parsedIngArrayCount = parsedIngArrayCountC.outArray #liste mit new ing id und häufigkeit
@@ -367,6 +365,7 @@ def getWholeParsedIngList(recArray, sub):
         parsedIngNoSpice = parsedIngNoSpiceC.outArray
         
         return(parsedIngNoSpice)
+        #return(ingFromArray)
     
 def getMainFkt(ingArray):
     crit = getCrit(ingArray)
