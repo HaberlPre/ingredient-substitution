@@ -7,7 +7,7 @@
 
 
 #%% 
-#import time
+import time
 import mysql.connector as mysql
 import numpy as np
 np.set_printoptions(threshold=10000)
@@ -21,6 +21,9 @@ con = mysql.connect(user='allrecipes', #the user name for authentication
 cur=con.cursor()
 
 #%% 
+#meal = "almond-butter"
+#meal = "mommas-pasta-and-shrimp-salad"
+#meal = "easy-beef-goulash"
 meal = "chicken-and-pumpkin-goulash"
 #meal = "almond-butter"
 #meal = "pizza"
@@ -314,10 +317,27 @@ def getPosMealType():
         ingArray.append(ingFromRec)        
     
     return(ingArray)
-
+    
+def getCompArray(ingArrayList, mealIng): #return array vom gericht mit höchster bool übereinstimmung und rezept/name ing
+    count = [0] * len(ingArrayList)
+    for i in range(len(ingArrayList)):
+        for j in range(len(mealIng)):
+            if mealIng[j][0] in ingArrayList[i]:
+                count[i] += 1
+    maxC = max(count) 
+    for i in range(len(count)): #wenn man mehrmals vorkommt: letzter wert
+        if count[i] == maxC:
+            index = i            
+            
+    compareArray=[]
+    compareArray.append(ingArrayList[index])
+    compareArray.append(mealIng)
+    return(compareArray)
+     
+     
 #%%
 def getWholeParsedIngList(recArray, sub):
-    if len(recArray) < 20 and sub:
+    if sub: #and len(recArray) < 20:
         out = getPosMealType()
         return(out)
     else:
@@ -330,9 +350,12 @@ def getWholeParsedIngList(recArray, sub):
         for i in range(len(ingFromArray)):
             List = np.append(WhoArray[i], ingFromArray[i])
             arrIngName.append(List)
-            
+        
+        t0 = time.time()
         parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, parsedArray, arrIngName)
         parsedIngArray = parsedIngArrayC.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
+        t1 = time.time()
+        print(t1-t0)
         
         parsedIngArrayCountC = getParsedIngCount(parsedIngArray)
         parsedIngArrayCount = parsedIngArrayCountC.outArray #liste mit new ing id und häufigkeit
@@ -358,6 +381,8 @@ def getRestFkt(ingArray):
     return(restIng)
     
 #%%
-topRanked = getWholeParsedIngList(topRankedRecipes, False) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
+topRankedSub = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
+topRankedRec = getWholeParsedIngList(topRankedRecipes, False)
+compArray = getCompArray(topRankedSub, topRankedRec)
 #topRankedMain = getMainFkt(topRanked)
 #topRankedRest = getRestFkt(topRanked)
