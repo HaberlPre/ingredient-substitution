@@ -201,7 +201,7 @@ class getParsedIngIdFromGIFR():
         returnArray=[]
         who = whoIngName[0][0]
         for i in range(len(Ring[0])):
-            if i>1: #i>0, sql crash mit "UNCLE BEN'S® Ready Rice® Jasmine"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            if i>0: #sql crash mit "UNCLE BEN'S® Ready Rice® Jasmine"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 ingName=Ring[0][i][0]
                 cur.execute("""SELECT  `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`
                     WHERE `p`.`original` LIKE '%s' """ % ingName + """
