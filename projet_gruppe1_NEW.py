@@ -22,8 +22,10 @@ cur=con.cursor()
 
 #%% 
 meal = "chicken-and-pumpkin-goulash"
+#meal = "almond-butter"
 #meal = "pizza"
 
+#%%
 def getParsedIng():
     cur.execute("""SELECT `name_after_processing`, `new_ingredient_id` FROM `parsed_ingredients`
                 WHERE `new_ingredient_id` > 0 ORDER BY `new_ingredient_id`""")
@@ -74,8 +76,8 @@ class getTopRankedRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `f`.`recipe_id` FROM `feature_table` `f`
-                    WHERE `f`.`recipe_id` LIKE '%s' """ % recipestring + """ AND `f`.`number_of_ratings` > 10
-                    ORDER BY `f`.`avg_rating` DESC LIMIT 30""") #limit shortens it significantly, currently for ease of use
+                    WHERE `f`.`recipe_id` LIKE '%s' """ % recipestring + """
+                    ORDER BY `f`.`avg_rating` DESC LIMIT 30""") #limit shortens it significantly, currently for ease of use,  AND `f`.`number_of_ratings` > 10 raus, chrashte bei nur einem rezept
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -356,6 +358,6 @@ def getRestFkt(ingArray):
     return(restIng)
     
 #%%
-topRanked = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
+topRanked = getWholeParsedIngList(topRankedRecipes, False) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
 #topRankedMain = getMainFkt(topRanked)
 #topRankedRest = getRestFkt(topRanked)
