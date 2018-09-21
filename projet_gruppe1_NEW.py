@@ -7,7 +7,7 @@
 
 
 #%% 
-import time
+#import time
 import mysql.connector as mysql
 import numpy as np
 np.set_printoptions(threshold=10000)
@@ -21,9 +21,8 @@ con = mysql.connect(user='allrecipes', #the user name for authentication
 cur=con.cursor()
 
 #%% 
-t0 = time.time()
-#%% 
-meal = "pizza"
+meal = "chicken-and-pumpkin-goulash"
+#meal = "pizza"
 
 def getParsedIng():
     cur.execute("""SELECT `name_after_processing`, `new_ingredient_id` FROM `parsed_ingredients`
@@ -57,6 +56,18 @@ np.save('parsedIngArray', tb)
 parsedArray = np.load('parsedIngArray.npy')
 #print(parsedArray[1000])
 
+#%%
+stopwords = ["a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",
+             "below", "between", "both", "but", "by", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during",
+             "each", "few", "for", "from", "further", "had", "hadn't", "has", "hasn't", "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her", "here", "here's",
+             "hers", "herself", "him", "himself", "his", "how", "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's", "its", "itself",
+             "let's", "me", "more", "most", "mustn't", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other", "ought", "our", "ours", "ourselves",
+             "out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's", "should", "shouldn't", "so", "some", "such", "than", "that", "that's", "the", "their",
+             "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too",
+             "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's",
+             "which", "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", 
+             "yourself", "yourselves", "easy", "mommas"]
+#stopwords from https://www.ranks.nl/stopwords
 
 #%%
 class getTopRankedRecipes():
@@ -64,7 +75,7 @@ class getTopRankedRecipes():
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `f`.`recipe_id` FROM `feature_table` `f`
                     WHERE `f`.`recipe_id` LIKE '%s' """ % recipestring + """ AND `f`.`number_of_ratings` > 10
-                    ORDER BY `f`.`avg_rating` DESC LIMIT 20""") #limit shortens it significantly, currently for ease of use
+                    ORDER BY `f`.`avg_rating` DESC LIMIT 30""") #limit shortens it significantly, currently for ease of use
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -89,7 +100,7 @@ class getHealthyRecipes():
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
                     WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `number_of_ratings` > 10
-                    ORDER BY `who_score` DESC LIMIT 20""") #limit shortens it significantly, currently for ease of use
+                    ORDER BY `who_score` DESC LIMIT 30""") #limit shortens it significantly, currently for ease of use
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -114,7 +125,7 @@ class getNotHealthyRecipes():
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
                     WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `number_of_ratings` > 10
-                    ORDER BY `who_score` ASC LIMIT 20""") #limit shortens it significantly, currently for ease of use 
+                    ORDER BY `who_score` ASC LIMIT 30""") #limit shortens it significantly, currently for ease of use 
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -154,18 +165,7 @@ class getRecWho():
         for i in range(len(rl)):
             RList.append(rl[0])
         return RList
-#%%
-topRankedWho = getRecWho(topRankedRecipes)
-topRankedWhoRec = topRankedWho.outRec
-#print(topRankedWhoRec)  
-#%%        
-bestWho = getRecWho(HealthyRecipes)
-bestWhoRec = bestWho.outRec #array with the who_scores of each recipe from the best recipes
-#print(bestWhoRec)
-#%%
-worstWho = getRecWho(NotHealthyRecipes)
-worstWhoRec = worstWho.outRec #array with the who_scores of each recipe from the worst recipes
-#print(worstWhoRec)
+
 #%% 
 class getIngredientsFromRecipes():
     def __init__(self, recipes):
@@ -186,36 +186,6 @@ class getIngredientsFromRecipes():
         AIList.append(ing)
         
         return AIList
-#%%
-ingFromTopRecipesClass = getIngredientsFromRecipes(topRankedRecipes)
-ingFromTopRecipes = ingFromTopRecipesClass.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
-#print(ingFromTopRecipes)
-
-arrTopRankedIngName = []
-for i in range(len(ingFromTopRecipes)):
-    List = np.append(topRankedWhoRec[i], ingFromTopRecipes[i])
-    arrTopRankedIngName.append(List)
-#print(arrTopRankedIngName)    
-#%%     
-ingHealthyRecipesClass = getIngredientsFromRecipes(HealthyRecipes)
-ingHealthyRecipes = ingHealthyRecipesClass.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
-#print(ingHealthyRecipes)
-
-arrBestWhoIngName=[]
-for i in range(len(ingHealthyRecipes)):
-    List = np.append(bestWhoRec[i], ingHealthyRecipes[i])
-    arrBestWhoIngName.append(List)  
-#print(arrBestWhoIngName)
-#%%     
-ingNotHealthyRecipesClass = getIngredientsFromRecipes(NotHealthyRecipes)
-ingNotHealthyRecipes = ingNotHealthyRecipesClass.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
-#print(ingFromWorstRecipes)
-
-arrWorstWhoIngName=[]
-for i in range(len(ingNotHealthyRecipes)):
-    List = np.append(worstWhoRec[i], ingNotHealthyRecipes[i])
-    arrWorstWhoIngName.append(List)  
-#print(arrWorstWhoIngName)
 
 #%% 
 
@@ -239,24 +209,6 @@ class getParsedIngIdFromGIFR():
         for m in range(0,len(outArray),2):
             res.append(outArray[m:2+m])
         return res
- #%% 
-tparsedArray0 = time.time()
-#%% 
-parsedIngFromTopRecipesClass = getParsedIngIdFromGIFR(ingFromTopRecipes, parsedArray, arrTopRankedIngName)
-parsedIngFromTopRecipes = parsedIngFromTopRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
-#print(parsedIngFromTopRecipes)
-
-#%%    
-parsedIngHealthyRecipesClass = getParsedIngIdFromGIFR(ingHealthyRecipes, parsedArray, arrBestWhoIngName)
-parsedIngHealthyRecipes = parsedIngHealthyRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
-#print(parsedIngHealthyRecipes)
-#%%    
-parsedIngNotHealthyRecipesClass = getParsedIngIdFromGIFR(ingNotHealthyRecipes, parsedArray, arrWorstWhoIngName)
-parsedIngNotHealthyRecipes = parsedIngNotHealthyRecipesClass.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
-#print(parsedIngNotHealthyRecipes)
-
-#%% 
-tparsedArray1 = time.time()
 
 #%%
 class getParsedIngCount():
@@ -279,18 +231,7 @@ class getParsedIngCount():
                     outArray[i][1] = outArray[i][1] + 1
             uniqueIdArray[i].append(str(outArray[i][1]))
         return uniqueIdArray
-#%%
-parsedIngCountFromTopRecipesClass = getParsedIngCount(parsedIngFromTopRecipes)
-parsedIngCountFromTopRecipes = parsedIngCountFromTopRecipesClass.outArray #liste mit new ing id und häufigkeit
-#print(parsedIngCountFromTopRecipes)
-#%% 
-parsedIngCountHealthyRecipesClass = getParsedIngCount(parsedIngHealthyRecipes)
-parsedIngCountHealthyRec = parsedIngCountHealthyRecipesClass.outArray #liste mit new ing id und häufigkeit
-#print((parsedIngCountHealthyRec))
-#%% 
-parsedIngCountNotHealthyRecipesClass = getParsedIngCount(parsedIngNotHealthyRecipes)
-parsedIngCountNotHealthyRec = parsedIngCountNotHealthyRecipesClass.outArray #liste mit new ing id und häufigkeit
-#print((parsedIngCountNotHealthyRec))
+
 #%% 
 class getMainIng(): #unsortiert!!!
     def __init__(self, PAC, critBestRec):
@@ -309,25 +250,7 @@ def getCrit(PAC):
         sum = sum+int(PAC[i][2])
     critBestRec = sum/len(PAC)
     return round(2*critBestRec)
-#%%
-critValueTopRec = getCrit(parsedIngCountFromTopRecipes) #kritische zahl, ab wann ein ing main wird
-MainTopIngClass = getMainIng(parsedIngCountFromTopRecipes, critValueTopRec)
-MainTopIng = MainTopIngClass.outArray #format: liste mit new ing id, count
-#print(MainTopIng)
 
-
-#%% #kritische zahl, ab wann ein ing main wird
-critValueHealthyRec = getCrit(parsedIngCountHealthyRec)
-mainIngHealthyRecClass = getMainIng(parsedIngCountHealthyRec, critValueHealthyRec)
-mainIngHealthyRec = mainIngHealthyRecClass.outArray
-#print(mainIngHealthyRec)
-#%% #kritische zahl, ab wann ein ing main wird
-critValueNotHealthyRec = getCrit(parsedIngCountNotHealthyRec)
-critNotHealthyRec = getCrit(parsedIngCountNotHealthyRec) #kritische zahl, ab wann ein ing main wird
-mainIngNotHealthyRecClass = getMainIng(parsedIngCountNotHealthyRec, critValueNotHealthyRec)
-mainIngNotHealthyRec = mainIngNotHealthyRecClass.outArray #format: liste mit new ing id, count
-#print(mainIngNotHealthyRec)
-#%% 
 class getRestIng(): #unsortiert!!!
     def __init__(self, PAC, critBestRec):
         self.outArray = self.output(PAC, critBestRec)
@@ -338,30 +261,7 @@ class getRestIng(): #unsortiert!!!
             if int(PAC[i][2]) < critBestRec:
                 outArray.append(PAC[i])  
         return outArray
-       
-def getCrit(PAC):
-    sum = 0
-    for i in range(len(PAC)):
-        sum = sum+int(PAC[i][2])
-    critBestRec = sum/len(PAC)
-    return round(2*critBestRec)
-#%%
-critValueTopRec = getCrit(parsedIngCountFromTopRecipes)
-restIngTopRecClass = getRestIng(parsedIngCountFromTopRecipes, critValueTopRec)
-restIngTopRec = restIngTopRecClass.outArray
-#print(restIngTopRec)
-#%%
-#print(parsedIngCountHealthyRec[5][0][2])
-critValueHealthyRec = getCrit(parsedIngCountHealthyRec) #kritische zahl, ab wann ein ing main wird
-restIngHealthyRecClass = getRestIng(parsedIngCountHealthyRec, critValueHealthyRec)
-restIngHealthyRec = restIngHealthyRecClass.outArray #format: liste mit new ing id, count
-#print(restIngHealthyRec)
 
-#%% 
-critValueNotHealthyRec = getCrit(parsedIngCountNotHealthyRec) #kritische zahl, ab wann ein ing main wird
-restIngNotHealthyRecClass = getRestIng(parsedIngCountNotHealthyRec, critValueNotHealthyRec)
-restIngNotHealthyRec = restIngNotHealthyRecClass.outArray #format: liste mit new ing id, count
-#print(restIngNotHealthyRec)
 #%% 
 #adds aisle to ing array
 """output: new ing id, count, who score, aisle, name"""
@@ -385,37 +285,77 @@ class addAisleAndName():
         return ingArray
         
 #%%
-mainTopRankedAisleAndNameClass = addAisleAndName(MainTopIng)
-mainTopRankedAisleAndName =sorted(mainTopRankedAisleAndNameClass.outIng, key = lambda x: int(x[2]))
-print(mainTopRankedAisleAndName)
-print("--------------------------------------------------------------------------------------------------------------")
-
-restTopRankedAisleAndNameClass = addAisleAndName(restIngTopRec)
-restTopRankedAisleAndName = sorted(restTopRankedAisleAndNameClass.outIng, key = lambda x: int(x[2]))
-print(restTopRankedAisleAndName)
-print("--------------------------------------------------------------------------------------------------------------")
-
-mainHealthyAisleAndNameClass = addAisleAndName(mainIngHealthyRec)
-mainHealthyAisleAndName = sorted(mainHealthyAisleAndNameClass.outIng, key = lambda x: int(x[2]))
-print(mainHealthyAisleAndName)
-print("--------------------------------------------------------------------------------------------------------------")
-
-restHealthyAisleAndNameClass = addAisleAndName(restIngHealthyRec)
-restHealthyAisleAndName = sorted(restHealthyAisleAndNameClass.outIng, key = lambda x: int(x[2]))
-print(restHealthyAisleAndName)
-print("--------------------------------------------------------------------------------------------------------------")
-
-mainNotHealthyAisleAndNameClass = addAisleAndName(mainIngNotHealthyRec)
-mainNotHealthyAisleAndName = sorted(mainNotHealthyAisleAndNameClass.outIng, key = lambda x: int(x[2]))
-print(mainNotHealthyAisleAndName)
-print("--------------------------------------------------------------------------------------------------------------")
-
-restNotHealthyAisleAndNameClass = addAisleAndName(restIngNotHealthyRec)
-restNotHealthyAisleAndName = sorted(restNotHealthyAisleAndNameClass.outIng, key = lambda x: int(x[2]))
-print(restNotHealthyAisleAndName)
+class removeSpices():
+    def __init__(self, ingArray):
+        self.outArray = self.output(ingArray)
+        
+    def output(self, ingArray):
+        outArray = []
+        for i in range(len(ingArray)):
+            if "Spices and Seasonings" not in ingArray[i][3]:
+                outArray.append(ingArray[i])
+        return outArray
+    
 #%%
-tstop = time.time()
-print("--------full time:-----------")
-print(tstop-t0)
-print("------parsedArrayTime:-------")
-print(tparsedArray1 - tparsedArray0)
+def getPosMealType():
+    orgWordArray = meal.split("-")
+    newWordArray=[]
+    for i in range(len(orgWordArray)):
+        if orgWordArray[i] not in stopwords:
+            newWordArray.append(orgWordArray[i])                      
+    
+    ingArray=[]
+    for i in range(len(newWordArray)):
+        recC = getTopRankedRecipes(newWordArray[i]) #evtl abdere fkt als top ranked?
+        rec = recC.outRec 
+        ingFromRec = getWholeParsedIngList(rec, False)
+        ingArray.append(ingFromRec)        
+    
+    return(ingArray)
+
+#%%
+def getWholeParsedIngList(recArray, sub):
+    if len(recArray) < 20 and sub:
+        out = getPosMealType()
+        return(out)
+    else:
+        WhoArrayC = getRecWho(recArray)
+        WhoArray = WhoArrayC.outRec
+        
+        ingFromArrayC = getIngredientsFromRecipes(recArray)
+        ingFromArray = ingFromArrayC.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
+        arrIngName=[]
+        for i in range(len(ingFromArray)):
+            List = np.append(WhoArray[i], ingFromArray[i])
+            arrIngName.append(List)
+            
+        parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, parsedArray, arrIngName)
+        parsedIngArray = parsedIngArrayC.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
+        
+        parsedIngArrayCountC = getParsedIngCount(parsedIngArray)
+        parsedIngArrayCount = parsedIngArrayCountC.outArray #liste mit new ing id und häufigkeit
+        
+        parsedIngAisleNameC = addAisleAndName(parsedIngArrayCount)
+        parsedIngAisleName = sorted(parsedIngAisleNameC.outIng, key = lambda x: int(x[2]))
+        
+        parsedIngNoSpiceC = removeSpices(parsedIngAisleName)
+        parsedIngNoSpice = parsedIngNoSpiceC.outArray
+        
+        return(parsedIngNoSpice)
+    
+def getMainFkt(ingArray):
+    crit = getCrit(ingArray)
+    mainIngC = getMainIng(ingArray, crit)
+    mainIng = mainIngC.outArray #format: liste mit new ing id, count etc
+    return(mainIng)
+
+def getRestFkt(ingArray):
+    crit = getCrit(ingArray)
+    restIngC = getRestIng(ingArray, crit)
+    restIng = restIngC.outArray #format: liste mit new ing id, count etc
+    return(restIng)
+    
+#%%
+topRanked = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
+#topRankedMain = getMainFkt(topRanked)
+#topRankedRest = getRestFkt(topRanked)
