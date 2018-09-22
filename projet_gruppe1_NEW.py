@@ -24,14 +24,17 @@ cur=con.cursor()
 #meal = "almond-butter"
 #meal = "mommas-pasta-and-shrimp-salad"
 #meal = "easy-beef-goulash"
-meal = "chicken-and-pumpkin-goulash"
-#meal = "almond-butter"
+#meal = "chicken-and-pumpkin-goulash"
+meal = "almond-butter"
 #meal = "pizza"
 
-#%%
-def getParsedIng():
-    cur.execute("""SELECT `name_after_processing`, `new_ingredient_id` FROM `parsed_ingredients`
-                WHERE `new_ingredient_id` > 0 ORDER BY `new_ingredient_id`""")
+
+#%% komplett unnütz weil neuer parser
+
+#def getParsedIng():
+    #cur.execute("""SELECT `name_after_processing`, `new_ingredient_id` FROM `parsed_ingredients`
+    #            WHERE `new_ingredient_id` > 0 ORDER BY `new_ingredient_id`""")
+"""
     ing = np.array(cur.fetchall(),dtype=str)
     parsedArray = []
     for i in range(len(ing)):
@@ -46,21 +49,21 @@ def getParsedIng():
 #%% 
 #parsedArray = getParsedIng() #runtime horror
 
-"""
-ta = np.asarray(["['0% fat greek yogurt' '1']", "['1 percent milk' '2']"]) #shortend array
-tb = []
-for i in range(len(ta)):
-    #print(i)
-    tc = ta[i].split("' '")
-    tc[0] = tc[0].replace("['", "")
-    tc[1] = tc[1].replace("']", "")
-    tb.append(tc)
+
+#ta = np.asarray(["['0% fat greek yogurt' '1']", "['1 percent milk' '2']"]) #shortend array
+#tb = []
+#for i in range(len(ta)):
+#    #print(i)
+#    tc = ta[i].split("' '")
+#    tc[0] = tc[0].replace("['", "")
+#    tc[1] = tc[1].replace("']", "")
+#    tb.append(tc)
 #print(tb)
-np.save('parsedIngArray', tb)
-"""
+#np.save('parsedIngArray', tb)
+
 parsedArray = np.load('parsedIngArray.npy')
 #print(parsedArray[1000])
-
+"""
 #%%
 stopwords = ["a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",
              "below", "between", "both", "but", "by", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during",
@@ -104,8 +107,8 @@ class getHealthyRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
-                    WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `number_of_ratings` > 10
-                    ORDER BY `who_score` DESC LIMIT 30""") #limit shortens it significantly, currently for ease of use
+                    WHERE `recipe_id` LIKE '%s' """ % recipestring + """
+                    ORDER BY `who_score` DESC LIMIT 30""") #limit shortens it significantly, currently for ease of use; AND `number_of_ratings` > 10 raus
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -129,8 +132,8 @@ class getNotHealthyRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
-                    WHERE `recipe_id` LIKE '%s' """ % recipestring + """ AND `number_of_ratings` > 10
-                    ORDER BY `who_score` ASC LIMIT 30""") #limit shortens it significantly, currently for ease of use 
+                    WHERE `recipe_id` LIKE '%s' """ % recipestring + """
+                    ORDER BY `who_score` ASC LIMIT 30""") #limit shortens it significantly, currently for ease of use; AND `number_of_ratings` > 10 raus
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -174,13 +177,9 @@ class getRecWho():
 #%% 
 class getIngredientsFromRecipes():
     def __init__(self, recipes):
-        #AIList=["" for x in range(len(recipes))]
         AIList=[]
         for i in range(len(recipes)):
             recipeID = recipes[i]
-            #print(recipeID)
-            #cur.execute("""SELECT `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`, `ingredients` `i` 
-            #            WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ AND `i`.`id` = `p`.`id` """)
             cur.execute("""SELECT `i`.`ingredient_name` FROM `ingredients` `i` 
                         WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
             self.ing=np.array(cur.fetchall(), dtype=str)
@@ -200,17 +199,20 @@ class getParsedIngIdFromGIFR():
     def output(self, Ring, Ping, whoIngName):
         returnArray=[]
         who = whoIngName[0][0]
-        for i in range(len(Ring[0])):
-            if i>0: #sql crash mit "UNCLE BEN'S® Ready Rice® Jasmine"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                ingName=Ring[0][i][0]
-                cur.execute("""SELECT  `p`.`new_ingredient_id` FROM `parsed_ingredients` `p`
-                    WHERE `p`.`original` LIKE '%s' """ % ingName + """
-                    LIMIT 1""") #limit shortens it significantly, currently for ease of use,  AND `f`.`number_of_ratings` > 10 raus, chrashte bei nur einem rezept
-                ingId=np.array(cur.fetchall(), dtype=str)
-                List=[]
-                List.append(ingId[0][0])
-                List.append(who)
-                returnArray.append(List)
+        for j in range(len(Ring)):
+            for i in range(len(Ring[j])):
+                try:        
+                    ingName=Ring[j][i][0]
+                    cur.execute("""SELECT  `new_ingredient_id` FROM `parsed_ingredients`
+                        WHERE `original` LIKE '%s' """ % ingName + """
+                        LIMIT 1""")
+                    ingId=np.array(cur.fetchall(), dtype=str)
+                    List=[]
+                    List.append(ingId[0][0])
+                    List.append(who)
+                    returnArray.append(List)
+                except:
+                    pass
         return(returnArray)
 
 #%%
@@ -228,8 +230,7 @@ class getParsedIngCount():
         for i in range(len(outArray)):
             outArray[i][0] = uniqueIdArray[i]
             for j in range(len(PA)):
-                if outArray[i][0][0] == PA[j][0]: #uniqueIdArray[i][0] === ingr_id
-                    
+                if outArray[i][0][0] == PA[j][0]: #uniqueIdArray[i][0] === ingr_id                    
                     #print(outArray[i][0][0])  #outArray[i][1] === count
                     outArray[i][1] = outArray[i][1] + 1
             uniqueIdArray[i].append(str(outArray[i][1]))
@@ -271,13 +272,15 @@ class getRestIng(): #unsortiert!!!
 class addAisleAndName():
     def __init__(self, ingArray): #nicht perfekt
         for i in range(len(ingArray)):
-            IngID = int(ingArray[i][0])
-            cur.execute("""SELECT `p`.`aisle`, `p`.`name_after_processing` FROM `parsed_ingredients` `p` 
-                        WHERE `p`.`new_ingredient_id` LIKE '%s' """ % IngID + """ 
-                        LIMIT 1""")
-            self.data = str(np.array(cur.fetchall(), dtype=str).tolist())
-            self.outIng = self.output(self.data, ingArray, i)
-            #print(self.data)
+            IngID = ingArray[i][0]
+            if IngID != "None":
+                IngID = int(IngID)
+                cur.execute("""SELECT `p`.`aisle`, `p`.`name_after_processing` FROM `parsed_ingredients` `p` 
+                            WHERE `p`.`new_ingredient_id` LIKE '%s' """ % IngID + """ 
+                            LIMIT 1""")
+                self.data = str(np.array(cur.fetchall(), dtype=str).tolist())
+                self.outIng = self.output(self.data, ingArray, i)
+                #print(self.data)
             
     def output(self, data, ingArray, i):
         aisle, name = data.split("', '")
@@ -295,8 +298,9 @@ class removeSpices():
     def output(self, ingArray):
         outArray = []
         for i in range(len(ingArray)):
-            if "Spices and Seasonings" not in ingArray[i][3]:
-                outArray.append(ingArray[i])
+            if ingArray[i][0] != "None":
+                if "Spices and Seasonings" not in ingArray[i][3]:
+                    outArray.append(ingArray[i])
         return outArray
     
 #%%
@@ -305,27 +309,28 @@ def getPosMealType():
     newWordArray=[]
     for i in range(len(orgWordArray)):
         if orgWordArray[i] not in stopwords:
-            newWordArray.append(orgWordArray[i])                      
+            newWordArray.append(orgWordArray[i])
     
-    ingArray=[]
+    mealArray=[]
     for i in range(len(newWordArray)):
-        recC = getTopRankedRecipes(newWordArray[i]) #evtl abdere fkt als top ranked?
+        recC = getTopRankedRecipes(newWordArray[i])
         rec = recC.outRec 
-        ingFromRec = getWholeParsedIngList(rec, False)
-        ingArray.append(ingFromRec)        
+        #print(rec)
+        ingFromRec = getWholeParsedIngList(rec, False)    
+        mealArray.append(ingFromRec)
     
-    return(ingArray)
+    return(mealArray)
     
 def getCompArray(ingArrayList, mealIng): #return array vom gericht mit höchster bool übereinstimmung und rezept/name ing
     count = [0] * len(ingArrayList)
     for i in range(len(ingArrayList)):
         for j in range(len(mealIng)):
-            if mealIng[j][0] in ingArrayList[i]:
+            if mealIng[j][0] == ingArrayList[i][0]: 
                 count[i] += 1
     maxC = max(count) 
     for i in range(len(count)): #wenn man mehrmals vorkommt: letzter wert
         if count[i] == maxC:
-            index = i            
+            index = i       
             
     compareArray=[]
     compareArray.append(ingArrayList[index])
@@ -334,7 +339,7 @@ def getCompArray(ingArrayList, mealIng): #return array vom gericht mit höchster
      
      
 #%%
-def getWholeParsedIngList(recArray, sub):
+def getWholeParsedIngList(recArray, sub): #macht nur einen index!
     if sub: #and len(recArray) < 20:
         out = getPosMealType()
         return(out)
@@ -349,11 +354,11 @@ def getWholeParsedIngList(recArray, sub):
             List = np.append(WhoArray[i], ingFromArray[i])
             arrIngName.append(List)
         
-        #t0 = time.time()
+        t0 = time.time()
         parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, parsedArray, arrIngName) #arrIngArray eig nur index 0 nötig (who score)
         parsedIngArray = parsedIngArrayC.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
-        #t1 = time.time()
-        #print(t1-t0)
+        t1 = time.time()
+        print(t1-t0)
         
         parsedIngArrayCountC = getParsedIngCount(parsedIngArray)
         parsedIngArrayCount = parsedIngArrayCountC.outArray #liste mit new ing id und häufigkeit
@@ -365,7 +370,6 @@ def getWholeParsedIngList(recArray, sub):
         parsedIngNoSpice = parsedIngNoSpiceC.outArray
         
         return(parsedIngNoSpice)
-        #return(ingFromArray)
     
 def getMainFkt(ingArray):
     crit = getCrit(ingArray)
@@ -383,5 +387,8 @@ def getRestFkt(ingArray):
 topRankedSub = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
 topRankedRec = getWholeParsedIngList(topRankedRecipes, False)
 compArray = getCompArray(topRankedSub, topRankedRec)
-#topRankedMain = getMainFkt(topRanked)
-#topRankedRest = getRestFkt(topRanked)
+topRankeRecdMain = getMainFkt(topRankedRec)
+topRankedRecRest = getRestFkt(topRankedRec)
+
+healthyRec = getWholeParsedIngList(HealthyRecipes, False)
+unhealthyRec = getWholeParsedIngList(NotHealthyRecipes, False)
