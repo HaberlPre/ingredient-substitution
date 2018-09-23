@@ -21,11 +21,10 @@ con = mysql.connect(user='allrecipes', #the user name for authentication
 cur=con.cursor()
 
 #%% 
-#meal = "almond-butter"
+meal = "almond-butter"
 #meal = "mommas-pasta-and-shrimp-salad"
 #meal = "easy-beef-goulash"
 #meal = "chicken-and-pumpkin-goulash"
-meal = "almond-butter"
 #meal = "pizza"
 
 
@@ -45,11 +44,8 @@ meal = "almond-butter"
             parsedArray.append(np.array2string(ing[i]))
     #print(len(parsedArray))
     return parsedArray
-
 #%% 
 #parsedArray = getParsedIng() #runtime horror
-
-
 #ta = np.asarray(["['0% fat greek yogurt' '1']", "['1 percent milk' '2']"]) #shortend array
 #tb = []
 #for i in range(len(ta)):
@@ -60,7 +56,6 @@ meal = "almond-butter"
 #    tb.append(tc)
 #print(tb)
 #np.save('parsedIngArray', tb)
-
 parsedArray = np.load('parsedIngArray.npy')
 #print(parsedArray[1000])
 """
@@ -150,7 +145,7 @@ class getNotHealthyRecipes():
 #%%        
 NotHealthyRecipesClass = getNotHealthyRecipes(meal)
 NotHealthyRecipes = NotHealthyRecipesClass.outRec #format: liste mit ids = links
-#print(worstRankedRecipes)
+#print(NotHealthyRecipes)
 
 
 #%%
@@ -358,7 +353,7 @@ def getWholeParsedIngList(recArray, sub): #macht nur einen index!
         parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, parsedArray, arrIngName) #arrIngArray eig nur index 0 nötig (who score)
         parsedIngArray = parsedIngArrayC.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
         t1 = time.time()
-        print(t1-t0)
+        #print(t1-t0)
         
         parsedIngArrayCountC = getParsedIngCount(parsedIngArray)
         parsedIngArrayCount = parsedIngArrayCountC.outArray #liste mit new ing id und häufigkeit
@@ -382,7 +377,28 @@ def getRestFkt(ingArray):
     restIngC = getRestIng(ingArray, crit)
     restIng = restIngC.outArray #format: liste mit new ing id, count etc
     return(restIng)
+
+#%%
+def getAvgWho(healthyRec, unhealthyRec): 
     
+    if(len(unhealthyRec)>len(healthyRec)):
+        for i in range(len(unhealthyRec)):
+            for j in range(len(healthyRec)):
+                if float(unhealthyRec[i][0]) == float(healthyRec[j][0]):
+                    unhealthyRecWho = float(unhealthyRec[i][1])
+                    healthyRecWho = float(healthyRec[j][1])
+                    avgRecWho = (healthyRecWho + unhealthyRecWho)/2
+                    unhealthyRec[i][1] = str(avgRecWho)
+                    healthyRec[j][1] = str(avgRecWho)
+    else:
+        for i in range(len(healthyRec)):
+            for j in range(len(unhealthyRec)):
+                if float(unhealthyRec[i][0]) == float(healthyRec[j][0]):
+                    unhealthyRecWho = float(unhealthyRec[i][1])
+                    healthyRecWho = float(healthyRec[j][1])
+                    avgRecWho = (healthyRecWho + unhealthyRecWho)/2
+                    unhealthyRec[i][1] = str(avgRecWho)
+                    healthyRec[j][1] = str(avgRecWho)
 #%%
 topRankedSub = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
 topRankedRec = getWholeParsedIngList(topRankedRecipes, False)
@@ -390,5 +406,20 @@ compArray = getCompArray(topRankedSub, topRankedRec)
 topRankeRecdMain = getMainFkt(topRankedRec)
 topRankedRecRest = getRestFkt(topRankedRec)
 
+#%%
+#healthy ing
 healthyRec = getWholeParsedIngList(HealthyRecipes, False)
+compArray = getCompArray(healthyRec, HealthyRecipes)
+HealthyRecipesMain = getMainFkt(healthyRec)
+HealthyRecipesRest = getRestFkt(healthyRec)
+#unhealthy ing
 unhealthyRec = getWholeParsedIngList(NotHealthyRecipes, False)
+compArray = getCompArray(unhealthyRec, NotHealthyRecipes)
+NotHealthyRecipesMain = getMainFkt(unhealthyRec)
+NotHealthyRecipesRest = getRestFkt(unhealthyRec)
+res = getAvgWho(HealthyRecipesRest, NotHealthyRecipesRest)
+
+#print("--------------Rest Healthy Ing-------------------")
+#print(HealthyRecipesRest)
+#print("-------------Rest Unhealthy Ing------------------")
+#print(NotHealthyRecipesRest)
