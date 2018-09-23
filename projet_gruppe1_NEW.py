@@ -21,11 +21,11 @@ con = mysql.connect(user='allrecipes', #the user name for authentication
 cur=con.cursor()
 
 #%% 
-meal = "almond-butter"
+#meal = "almond-butter"
 #meal = "mommas-pasta-and-shrimp-salad"
 #meal = "easy-beef-goulash"
 #meal = "chicken-and-pumpkin-goulash"
-#meal = "pizza"
+meal = "pizza"
 
 
 #%% komplett unnütz weil neuer parser
@@ -69,7 +69,7 @@ stopwords = ["a", "about", "above", "after", "again", "against", "all", "am", "a
              "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too",
              "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's",
              "which", "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", 
-             "yourself", "yourselves", "easy", "mommas"]
+             "yourself", "yourselves"]
 #stopwords from https://www.ranks.nl/stopwords
 
 #%%
@@ -187,11 +187,11 @@ class getIngredientsFromRecipes():
         return AIList
 
 #%% 
-class getParsedIngIdFromGIFR():
-    def __init__(self, Ring, Ping, whoIngName):
-        self.outArray = self.output(Ring, Ping, whoIngName)
+class getParsedIngIdFromGIFR(): #hier früher parsedArray
+    def __init__(self, Ring, whoIngName):
+        self.outArray = self.output(Ring, whoIngName)
     
-    def output(self, Ring, Ping, whoIngName):
+    def output(self, Ring, whoIngName):
         returnArray=[]
         who = whoIngName[0][0]
         for j in range(len(Ring)):
@@ -308,7 +308,7 @@ def getPosMealType():
     
     mealArray=[]
     for i in range(len(newWordArray)):
-        recC = getTopRankedRecipes(newWordArray[i])
+        recC = getTopRankedRecipes(newWordArray[i]) #evtl andere query
         rec = recC.outRec 
         #print(rec)
         ingFromRec = getWholeParsedIngList(rec, False)    
@@ -319,10 +319,16 @@ def getPosMealType():
 def getCompArray(ingArrayList, mealIng): #return array vom gericht mit höchster bool übereinstimmung und rezept/name ing
     count = [0] * len(ingArrayList)
     for i in range(len(ingArrayList)):
-        for j in range(len(mealIng)):
-            if mealIng[j][0] == ingArrayList[i][0]: 
-                count[i] += 1
-    maxC = max(count) 
+        for j in range(len(ingArrayList[i])):
+            for k in range(len(mealIng)):
+                if int(mealIng[k][0]) == int(ingArrayList[i][j][0]): 
+                    count[i] += 1
+        if count[i] != 0:
+            count[i] = len(ingArrayList[i]) / count[i]
+        else:
+            count[i] = 100
+    print(count)
+    maxC = min(count) #weil division: min = max übereinstimmung
     for i in range(len(count)): #wenn man mehrmals vorkommt: letzter wert
         if count[i] == maxC:
             index = i       
@@ -350,7 +356,7 @@ def getWholeParsedIngList(recArray, sub): #macht nur einen index!
             arrIngName.append(List)
         
         t0 = time.time()
-        parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, parsedArray, arrIngName) #arrIngArray eig nur index 0 nötig (who score)
+        parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, arrIngName) #arrIngArray eig nur index 0 nötig (who score)
         parsedIngArray = parsedIngArrayC.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
         t1 = time.time()
         #print(t1-t0)
@@ -408,16 +414,18 @@ topRankedRecRest = getRestFkt(topRankedRec)
 
 #%%
 #healthy ing
+healthySub = getWholeParsedIngList(HealthyRecipes, True)
 healthyRec = getWholeParsedIngList(HealthyRecipes, False)
-compArray = getCompArray(healthyRec, HealthyRecipes)
+compArray1 = getCompArray(healthySub, healthyRec)
 HealthyRecipesMain = getMainFkt(healthyRec)
 HealthyRecipesRest = getRestFkt(healthyRec)
 #unhealthy ing
+unhealthySub = getWholeParsedIngList(NotHealthyRecipes, True)
 unhealthyRec = getWholeParsedIngList(NotHealthyRecipes, False)
-compArray = getCompArray(unhealthyRec, NotHealthyRecipes)
+compArray2 = getCompArray(unhealthySub, unhealthyRec)
 NotHealthyRecipesMain = getMainFkt(unhealthyRec)
 NotHealthyRecipesRest = getRestFkt(unhealthyRec)
-calcAvgWho = getAvgWho(HealthyRecipesRest, NotHealthyRecipesRest) #changes the value of the who score of the rest healthy and rest unhealthy ingredients
+getAvgWho(HealthyRecipesRest, NotHealthyRecipesRest)
 
 #print("--------------Rest Healthy Ing-------------------")
 #print(HealthyRecipesRest)
