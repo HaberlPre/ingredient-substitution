@@ -417,7 +417,7 @@ unhealthyRec = getWholeParsedIngList(NotHealthyRecipes, False)
 compArray = getCompArray(unhealthyRec, NotHealthyRecipes)
 NotHealthyRecipesMain = getMainFkt(unhealthyRec)
 NotHealthyRecipesRest = getRestFkt(unhealthyRec)
-res = getAvgWho(HealthyRecipesRest, NotHealthyRecipesRest)
+calcAvgWho = getAvgWho(HealthyRecipesRest, NotHealthyRecipesRest) #changes the value of the who score of the rest healthy and rest unhealthy ingredients
 
 #print("--------------Rest Healthy Ing-------------------")
 #print(HealthyRecipesRest)
