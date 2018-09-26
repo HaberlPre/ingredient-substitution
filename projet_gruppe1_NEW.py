@@ -477,7 +477,7 @@ def getMostSimilarRec(compareArray, topRankedRecipes):
     return(allIngFromRec[index+1])
     
 #%%
-def substituteWithRecipe(startingRecipe, recForSubstitution): #noch nicht fertig
+"""def substituteWithRecipe(startingRecipe, recForSubstitution): #noch nicht fertig
     stRec = startingRecipe
     subRec = recForSubstitution
     for stIng in stRec[:]:
@@ -495,10 +495,10 @@ def substituteWithRecipe(startingRecipe, recForSubstitution): #noch nicht fertig
     
     
     
-    return startingRecipe
+    return startingRecipe"""
     
 #%%
-startRec = getWholeParsedIngList(topRankedRecipes[:1],False)
+startRec = getWholeParsedIngList(topRankedRecipes[:1], False)
 topRankedSub = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
 topRankedRec = getWholeParsedIngList(topRankedRecipes, False)
 compArray = getCompArray(topRankedSub, topRankedRec)
