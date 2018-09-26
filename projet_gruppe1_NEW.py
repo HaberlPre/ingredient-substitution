@@ -465,11 +465,12 @@ def getMostSimilarRec(compareArray, topRankedRecipes):
     index = 0
     
     for i in range(len(vectorList[1:])):
-        similarity = 1 - spatial.distance.cosine(baseRecVector, vectorList[i+1])
-        print("Ähnlichkeit: "+str(similarity))
-        if similarity > maxSimilarity:
-            maxSimilarity = similarity
-            index = i
+        if np.any(vectorList[i+1]):
+            similarity = 1 - spatial.distance.cosine(baseRecVector, vectorList[i+1])
+            print("Ähnlichkeit: "+str(similarity))
+            if similarity > maxSimilarity:
+                maxSimilarity = similarity
+                index = i
 
     print("Original-Rezept: "+str(allIngFromRec[0]))
     print("Ähnlichstes-Rezept: "+str(allIngFromRec[index+1]))
