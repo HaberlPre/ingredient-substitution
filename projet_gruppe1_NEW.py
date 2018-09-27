@@ -11,6 +11,8 @@ import time
 import mysql.connector as mysql
 import numpy as np
 from scipy import spatial
+from itertools import groupby
+from difflib import SequenceMatcher
 np.set_printoptions(threshold=10000)
 
 
@@ -25,8 +27,8 @@ cur=con.cursor()
 #meal = "almond-butter"
 #meal = "mommas-pasta-and-shrimp-salad"
 #meal = "easy-beef-goulash"
-#meal = "chicken-and-pumpkin-goulash"
-meal = "pizza"
+meal = "chicken-and-pumpkin-goulash"
+#meal = "pizza"
 wordArray = []
 
 
@@ -478,33 +480,123 @@ def getMostSimilarRec(compareArray, topRankedRecipes):
     return(allIngFromRec[index+1])
     
 #%%
-"""def substituteWithRecipe(startingRecipe, recForSubstitution): #noch nicht fertig
-    stRec = startingRecipe
+def substituteWithRecipe(startingRecipe, recForSubstitution): #noch nicht fertig
+    newRecipe = []
+    stRec = startingRecipe[:]
     subRec = recForSubstitution
     for stIng in stRec[:]:
         for suIng in subRec[:]:
             if stIng[0] == suIng[0]:
                 stRec.remove(stIng)
                 subRec.remove(suIng)
+                newRecipe.append(stIng)
+                
     
-    for stIng in subRec:
+    #print("Neues Startrezept: "+str(stRec))
+    #print("Neues Subrezept: "+ str(subRec))
+    
+    stRec.sort(key=lambda x:x[3])
+    subRec.sort(key=lambda x:x[3])
+    
+    stAisleGroups = []
+    stAisleUniqueKeys = []
+    subAisleGroups = []
+    subAisleUniqueKeys = []
+    for key, group in groupby(stRec, lambda x:x[3]):
+        stAisleGroups.append(list(group))
+        stAisleUniqueKeys.append(key)
+    for key, group in groupby(subRec, lambda x:x[3]):
+        subAisleGroups.append(list(group))
+        subAisleUniqueKeys.append(key)
+    
+    #print(stAisleGroups)
+    
+    for stPosition, stKey in enumerate(stAisleUniqueKeys[:]):
+        for subPosition, subKey in enumerate(subAisleUniqueKeys):
+            if stKey == subKey:
+                thisAisle = compareIngLists(stAisleGroups[stPosition], subAisleGroups[subPosition])
+                newRecipe.extend(thisAisle)
+                stAisleUniqueKeys.remove(stKey)
+    
+    #print(stAisleGroups)
+    for key in stAisleUniqueKeys:
+        for i in range(len(stAisleGroups)):
+            if stAisleGroups[i][0][3] == key:
+               for item in stAisleGroups[i]:
+                   newRecipe.append(item)
+                
+    print(newRecipe)
+    
+    print(len(startingRecipe))
+    print(len(newRecipe))
+                
+    #print("stAisleGroups: "+str(stAisleGroups))
+    #print("subAisleGroups: "+str(subAisleGroups))
+        
+    
+    #print("Sortiertes Startrezept: "+str(stRec))
+    #print("Sortiertes Subrezept: "+ str(subRec))
+    
+    """for stIng in stRec[:]:
         ingList = []
-        for suIng in stRec:
+        for suIng in subRec[:]:
             if suIng[3] == stIng[3]:
                 ingList.append(suIng)
-        for possibleIng in ingList:
+        for possibleIng in ingList:"""
+            
     
     
-    
-    return startingRecipe"""
-    
+    return newRecipe
+
+def compareIngLists(stAisleIngs, subAisleIngs):
+    comparedIngList = []
+    if len(stAisleIngs) <= len(subAisleIngs):
+        for stIng in stAisleIngs:
+            maxSimilarity = 0
+            index = -1
+            
+            for thisIndex, subIng in enumerate(subAisleIngs):
+                thisSimilarity = compareStrings(stIng[4],subIng[4])
+                if maxSimilarity < thisSimilarity < 1 and stIng[1] < subIng[1]:
+                    maxSimilarity = thisSimilarity
+                    index = thisIndex
+            if index == -1:
+                comparedIngList.append(stIng)
+            else:
+                comparedIngList.append(subAisleIngs[index])
+    else:
+        for subIng in subAisleIngs:
+            maxSimilarity = 0
+            index = -1
+            for thisIndex, stIng in enumerate(stAisleIngs[:]):
+                thisSimilarity = compareStrings(stIng[4],subIng[4])
+                if maxSimilarity < thisSimilarity < 1 and stIng[1] < subIng[1]:
+                    maxSimilarity = thisSimilarity
+                    index = thisIndex
+            if index != -1:
+                comparedIngList.append(subIng)
+                del stAisleIngs[index]
+        if all(isinstance(x, list) for x in stAisleIngs):
+            comparedIngList.extend(stAisleIngs)
+        else:
+            comparedIngList.append(stAisleIngs)
+    return comparedIngList
+
+def compareStrings(a,b):
+    sequence = SequenceMatcher(None, a, b).ratio()
+    print("Ähnlichkeit von \"" +a+"\" und \""+ b + "\" is: " +str(sequence))
+    return SequenceMatcher(None, a, b).ratio()
+
 #%%
+#startRec = [['2395', '3.0', '1', 'Oil, Vinegar, Salad Dressing', 'olive oil'], ['700', '3.0', '1', 'Meat', 'chicken tender'], ['1516', '3.0', '1', 'Produce', 'garlic'], ['2632', '3.0', '1', 'Bakery/Bread', 'pita bread'], ['204', '3.0', '1', 'Pasta and Rice', 'basil pesto'], ['33', '3.0', '1', 'Pasta and Rice', 'alfredo sauce'], ['3253', '3.0', '1', 'Produce', 'spinach leaf'], ['2190', '3.0', '1', 'Canned and Jarred', 'marinated artichoke heart'], ['1347', '3.0', '1', 'Cheese', 'feta cheese'], ['3132', '3.0', '1', 'Cheese', 'shredded mozzarella cheese'], ['2474', '3.0', '1', 'Cheese', 'parmesan cheese'], ['1454', '3.0', '1', 'Produce', 'fresh mushroom']]
+#subRec = [['3230', '5.0', '1', 'Pasta and Rice', 'spaghetti sauce'], ['3132', '5.0', '1', 'Cheese', 'shredded mozzarella cheese'], ['2474', '5.0', '1', 'Cheese', 'parmesan cheese'], ['1414', '5.0', '1', 'Bakery/Bread', 'french bread']]
+
 startRec = getWholeParsedIngList(topRankedRecipes[:1], False)
 topRankedSub = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
 topRankedRec = getWholeParsedIngList(topRankedRecipes, False)
 compArray = getCompArray(topRankedSub, topRankedRec)
 subRec = getMostSimilarRec(compArray,topRankedRecipes)
-#substitutedRec = substituteWithRecipe(startRec, subRec)
+substitutedRec = substituteWithRecipe(startRec, subRec)
 
 #topRankeRecdMain = getMainFkt(topRankedRec)
 #topRankedRecRest = getRestFkt(topRankedRec)
@@ -516,6 +608,7 @@ subRec = getMostSimilarRec(compArray,topRankedRecipes)
 #compArray1 = getCompArray(healthySub, healthyRec)
 #HealthyRecipesMain = getMainFkt(healthyRec)
 #HealthyRecipesRest = getRestFkt(healthyRec)
+#print(compArray1[0])
 #unhealthy ing
 #unhealthySub = getWholeParsedIngList(NotHealthyRecipes, True)
 #unhealthyRec = getWholeParsedIngList(NotHealthyRecipes, False)
