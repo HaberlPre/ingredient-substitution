@@ -31,38 +31,6 @@ meal = "mommas-pasta-and-shrimp-salad"
 #meal = "pizza"
 wordArray = []
 
-
-#%% komplett unnütz weil neuer parser
-
-#def getParsedIng():
-    #cur.execute("""SELECT `name_after_processing`, `new_ingredient_id` FROM `parsed_ingredients`
-    #            WHERE `new_ingredient_id` > 0 ORDER BY `new_ingredient_id`""")
-"""
-    ing = np.array(cur.fetchall(),dtype=str)
-    parsedArray = []
-    for i in range(len(ing)):
-        #print(i)
-        if any(ing[i][1] in j for j in parsedArray):
-            pass
-        else:
-            parsedArray.append(np.array2string(ing[i]))
-    #print(len(parsedArray))
-    return parsedArray
-#%% 
-#parsedArray = getParsedIng() #runtime horror
-#ta = np.asarray(["['0% fat greek yogurt' '1']", "['1 percent milk' '2']"]) #shortend array
-#tb = []
-#for i in range(len(ta)):
-#    #print(i)
-#    tc = ta[i].split("' '")
-#    tc[0] = tc[0].replace("['", "")
-#    tc[1] = tc[1].replace("']", "")
-#    tb.append(tc)
-#print(tb)
-#np.save('parsedIngArray', tb)
-parsedArray = np.load('parsedIngArray.npy')
-#print(parsedArray[1000])
-"""
 #%%
 stopwords = ["a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",
              "below", "between", "both", "but", "by", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during",
@@ -99,7 +67,6 @@ class getTopRankedRecipes():
 #%%        
 topRankedRecipesClass = getTopRankedRecipes(meal)
 topRankedRecipes = topRankedRecipesClass.outRec #format: liste mit ids = links
-#print(topRankedRecipes)
 
 #%% 
 class getHealthyRecipes():
@@ -112,7 +79,6 @@ class getHealthyRecipes():
         self.outRec=self.output(self.rec)
         
     def output(self, rec):
-        #print(ing)
         RList=[]
         for i in range(len(rec)):
             RList.append(np.array2string(rec[i]))
@@ -124,7 +90,6 @@ class getHealthyRecipes():
 #%%        
 HealthyRecipesClass = getHealthyRecipes(meal)
 HealthyRecipes = HealthyRecipesClass.outRec #format: liste mit ids = links
-#print(bestRankedRecipes)
 
 #%% 
 class getNotHealthyRecipes():
@@ -137,7 +102,6 @@ class getNotHealthyRecipes():
         self.outRec=self.output(self.rec)
         
     def output(self, rec):
-        #print(ing)
         RList=[]
         for i in range(len(rec)):
             RList.append(np.array2string(rec[i]))
@@ -149,8 +113,6 @@ class getNotHealthyRecipes():
 #%%        
 NotHealthyRecipesClass = getNotHealthyRecipes(meal)
 NotHealthyRecipes = NotHealthyRecipesClass.outRec #format: liste mit ids = links
-#print(NotHealthyRecipes)
-
 
 #%%
 class getRecWho():
@@ -183,7 +145,6 @@ class getIngredientsFromRecipes():
                         WHERE `i`.`recipe_id` = '%s' """ % recipeID + """ """)
             self.ing=np.array(cur.fetchall(), dtype=str)
             self.outIng=self.output(self.ing, AIList)
-            #print(self.ing)
             
     def output(self, ing, AIList):
         AIList.append(ing)
@@ -199,9 +160,7 @@ class getParsedIngIdFromGIFR(): #hier früher parsedArray
         returnArray=[]
         who = whoIngName[0][0]
         for j in range(len(Ring)):
-            #print("Bin bei Rezept: " +str(j))
             for i in range(len(Ring[j])):
-                #print("Bin bei Zutat: " +str(i)+" "+Ring[j][i][0])
                 try:        
                     ingName=Ring[j][i][0]
                     cur.execute("""SELECT  `new_ingredient_id` FROM `parsed_ingredients`
@@ -211,10 +170,7 @@ class getParsedIngIdFromGIFR(): #hier früher parsedArray
                     List=[]
                     List.append(ingId[0][0])
                     List.append(who)
-                    #print("Aktuelle Liste der Zutat: " +str(List))
                     returnArray.append(List)
-                    #print("Liste aller Zutaten: " + str(returnArray))
-                    #print(len(returnArray))
                 except:
                     pass
         return(returnArray)
@@ -284,7 +240,6 @@ class addAisleAndName():
                             LIMIT 1""")
                 self.data = str(np.array(cur.fetchall(), dtype=str).tolist())
                 self.outIng = self.output(self.data, ingArray, i)
-                #print(self.data)
             
     def output(self, data, ingArray, i):
         aisle, name = data.split("', '")
@@ -322,7 +277,6 @@ def getPosMealType():
     for i in range(len(newWordArray)):
         recC = getTopRankedRecipes(newWordArray[i]) #evtl andere query
         rec = recC.outRec 
-        #print(rec)
         ingFromRec = getWholeParsedIngList(rec, False)
         mealArray.append(ingFromRec)
     
@@ -349,9 +303,6 @@ def getCompArray(ingArrayList, mealIng): #return array vom gericht mit höchster
     compareArray.append(ingArrayList[index])
     compareArray.append(mealIng)
     compareArray.append(wordArray[index])
-    #print("Liste an Zutaten mit größter Übereinstimmung: " + str(compareArray[0]))
-    #print("Zutatenpool der ursprünglichen Rezepte: " + str(compareArray[1]))
-    #print("Name des richtigen Pools: " + str(compareArray[2]))
     return(compareArray)
      
      
@@ -361,31 +312,19 @@ def getWholeParsedIngList(recArray, sub): #macht nur einen index!
         out = getPosMealType()
         return(out)
     else:
-        
         WhoArrayC = getRecWho(recArray)
         WhoArray = WhoArrayC.outRec
         
-        
         ingFromArrayC = getIngredientsFromRecipes(recArray)
         ingFromArray = ingFromArrayC.outIng #format: liste mit listen (ing für ein je ein rezept; nächstes rezept...)
-        
-        #print(ingFromArray)
-        
-        #print(len(ingFromArray))
         
         arrIngName=[] #eig unnötig
         for i in range(len(ingFromArray)):
             List = np.append(WhoArray[i], ingFromArray[i])
             arrIngName.append(List)
         
-        #print("ArrIngName: " + str(arrIngName))
-        t0 = time.time()
         parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, arrIngName) #arrIngArray eig nur index 0 nötig (who score)
         parsedIngArray = parsedIngArrayC.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
-        t1 = time.time()
-        #print(t1-t0)
-        
-        #print(len(parsedIngArray))
         
         parsedIngArrayCountC = getParsedIngCount(parsedIngArray)
         parsedIngArrayCount = parsedIngArrayCountC.outArray #liste mit new ing id und häufigkeit
@@ -439,7 +378,6 @@ class getRecWithHigherWHO():
         cur.execute("""SELECT `recipe_id` FROM `feature_table` WHERE `recipe_id` LIKE  '%""" + recString + """%' AND `who_score`> """+ recArray[0][1] +""" ORDER BY `who_score` DESC LIMIT 50""") #limit shortens it significantly, currently for ease of use; AND `number_of_ratings` > 10 raus
         self.recIds=np.array(cur.fetchall(), dtype=str)
         self.outIds=self.output(self.recIds, RList)
-        #print(self.ing)
             
     def output(self, recIds, RList):
         for item in recIds:
@@ -461,13 +399,10 @@ def getMostSimilarRec(compareArray, startRec):
     allIngFromRec = []
     allIngFromRec.append(baseRecIng)
     allIngFromRec.extend(recIngWithHigherWho) #neues Array da dann richtig formatiert
-    
-    #print(allIngFromRec)
             
     ingPool = compareArray[0] #alle Ingredients des neuen Ingredient-Pools
     
     vectorList = np.zeros((len(allIngFromRec),len(ingPool)))
-    #print(len(vectorList))
     
     for i in range(len(allIngFromRec)):
         for j in range(len(allIngFromRec[i])):
@@ -475,7 +410,6 @@ def getMostSimilarRec(compareArray, startRec):
                 if allIngFromRec[i][j][0] == ingPool[k][0]:
                     vectorList[i][k] = 1
     
-    #print(vectorList)
     baseRecVector = vectorList[0]
     
     maxSimilarity = 0
@@ -484,41 +418,18 @@ def getMostSimilarRec(compareArray, startRec):
     for i in range(len(vectorList[1:])):
         if np.any(vectorList[i+1]):
             similarity = 1 - spatial.distance.cosine(baseRecVector, vectorList[i+1])
-            print("Ähnlichkeit: "+str(similarity))
             if similarity > maxSimilarity:
                 maxSimilarity = similarity
                 index = i
-
-    print("Original-Rezept: "+str(allIngFromRec[0]))
-    print("Ähnlichstes-Rezept: "+str(allIngFromRec[index+1]))
     
     return(allIngFromRec[index+1])
 
-#%%
-def getIngListWithHigherWho(compareArray, startRec):
-    recWithHigherWhoC = getRecWithHigherWHO(compareArray[2], startRec)#compareArray[2] = String des neuen Ingredient-Pools
-    recWithHigherWho = recWithHigherWhoC.outIds
-    
-    recIngWithHigherWho = [] #alle ing der rezepte mit höherer who als Ursprungsrezept
-    for i in range(len(recWithHigherWho[0])):
-        recIngWithHigherWho.append(getWholeParsedIngList(recWithHigherWho[i], False))
-    
-    return recIngWithHigherWho
 #%%
 def substituteWithRecipe(startingRecipe, recForSubstitution, strictSubstitution = False): #noch nicht fertig
     newRecipe = []
     stRec = startingRecipe
     subRec = recForSubstitution
-    """for stIng in stRec[:]:
-        for suIng in subRec[:]:
-            if stIng[0] == suIng[0]:
-                stRec.remove(stIng)
-                subRec.remove(suIng)
-                newRecipe.append(stIng)"""
                 
-    print(stRec)
-    print(subRec)
-    
     stRec.sort(key=lambda x:x[3])
     subRec.sort(key=lambda x:x[3])
     
@@ -546,8 +457,6 @@ def substituteWithRecipe(startingRecipe, recForSubstitution, strictSubstitution 
             if stAisleGroups[i][0][3] == key:
                for item in stAisleGroups[i]:
                    newRecipe.append(item)
-                
-    print(newRecipe)
     return newRecipe
 
 def compareIngLists(stAisleIngs, subAisleIngs, strictSubstitution):
@@ -589,16 +498,9 @@ def compareIngLists(stAisleIngs, subAisleIngs, strictSubstitution):
     return comparedIngList
 
 def compareStrings(a,b):
-    sequence = SequenceMatcher(None, a, b).ratio()
-    print("Ähnlichkeit von \"" +a+"\" und \""+ b + "\" is: " +str(sequence))
     return SequenceMatcher(None, a, b).ratio()
 
 #%%
-#startRec = [['2395', '3.0', '1', 'Oil, Vinegar, Salad Dressing', 'olive oil'], ['700', '3.0', '1', 'Meat', 'chicken tender'], ['1516', '3.0', '1', 'Produce', 'garlic'], ['2632', '3.0', '1', 'Bakery/Bread', 'pita bread'], ['204', '3.0', '1', 'Pasta and Rice', 'basil pesto'], ['33', '3.0', '1', 'Pasta and Rice', 'alfredo sauce'], ['3253', '3.0', '1', 'Produce', 'spinach leaf'], ['2190', '3.0', '1', 'Canned and Jarred', 'marinated artichoke heart'], ['1347', '3.0', '1', 'Cheese', 'feta cheese'], ['3132', '3.0', '1', 'Cheese', 'shredded mozzarella cheese'], ['2474', '3.0', '1', 'Cheese', 'parmesan cheese'], ['1454', '3.0', '1', 'Produce', 'fresh mushroom']]
-#subRec = [['3230', '5.0', '1', 'Pasta and Rice', 'spaghetti sauce'], ['3132', '5.0', '1', 'Cheese', 'shredded mozzarella cheese'], ['2474', '5.0', '1', 'Cheese', 'parmesan cheese'], ['1414', '5.0', '1', 'Bakery/Bread', 'french bread']]
-
-#startRec = getWholeParsedIngList(['http://allrecipes.com/recipe/mexican-goulash/detail.aspx'], False)
-
 startRec = getWholeParsedIngList(topRankedRecipes[:1], False)
 topRankedSub = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
 topRankedRec = getWholeParsedIngList(topRankedRecipes, False)
@@ -620,11 +522,6 @@ substitutedWithPool = substituteWithRecipe(substitutedWithRecipe, recPool, True)
 print("Startrezept: " + str(startRec))
 print("Erste Sub: " + str(substitutedWithRecipe))
 print("Zweite Sub: " + str(substitutedWithPool))
-
-#print("Ursprungsrezept: "+ str(startRec))
-#print("Neues Rezept: "+ str(substitutedRec))
-#topRankeRecdMain = getMainFkt(topRankedRec)
-#topRankedRecRest = getRestFkt(topRankedRec)
 
 #%%
 #healthy ing
