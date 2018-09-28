@@ -41,7 +41,7 @@ stopwords = ["a", "about", "above", "after", "again", "against", "all", "am", "a
              "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too",
              "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's",
              "which", "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", 
-             "yourself", "yourselves", "mommas"]
+             "yourself", "yourselves"]
 #stopwords from https://www.ranks.nl/stopwords
 
 #%%
@@ -251,15 +251,24 @@ class addAisleAndName():
         
 #%%
 class removeSpices():
-    def __init__(self, ingArray):
-        self.outArray = self.output(ingArray)
+    def __init__(self, ingArray, appendSpicesInNewArray = False):
+        self.outArray = self.output(ingArray, appendSpicesInNewArray)
         
-    def output(self, ingArray):
+    def output(self, ingArray, appendSpicesInNewArray):
         outArray = []
+        noSpices = []
+        spices = []
         for i in range(len(ingArray)):
             if ingArray[i][0] != "None":
                 if "Spices and Seasonings" not in ingArray[i][3]:
-                    outArray.append(ingArray[i])
+                    noSpices.append(ingArray[i])
+                else:
+                    spices.append(ingArray[i])
+        if not appendSpicesInNewArray:
+            outArray.extend(noSpices)
+        else:
+            outArray.append(noSpices)
+            outArray.append(spices)
         return outArray
     
 #%%
@@ -307,7 +316,7 @@ def getCompArray(ingArrayList, mealIng): #return array vom gericht mit höchster
      
      
 #%%
-def getWholeParsedIngList(recArray, sub): #macht nur einen index!
+def getWholeParsedIngList(recArray, sub, mustRemoveSpices = True): #macht nur einen index!
     if sub: #and len(recArray) < 20:
         out = getPosMealType()
         return(out)
@@ -332,6 +341,9 @@ def getWholeParsedIngList(recArray, sub): #macht nur einen index!
         parsedIngAisleNameC = addAisleAndName(parsedIngArrayCount)
         parsedIngAisleName = sorted(parsedIngAisleNameC.outIng, key = lambda x: int(x[2]))
         
+        if not mustRemoveSpices:
+            return parsedIngAisleName
+        
         parsedIngNoSpiceC = removeSpices(parsedIngAisleName)
         parsedIngNoSpice = parsedIngNoSpiceC.outArray
         
@@ -348,7 +360,6 @@ def getRestFkt(ingArray):
     restIngC = getRestIng(ingArray, crit)
     restIng = restIngC.outArray #format: liste mit new ing id, count etc
     return(restIng)
-
 #%%
 def getAvgWho(healthyRec, unhealthyRec): 
     
@@ -429,6 +440,11 @@ def substituteWithRecipe(startingRecipe, recForSubstitution, strictSubstitution 
     newRecipe = []
     stRec = startingRecipe
     subRec = recForSubstitution
+    
+    for stIng in stRec:
+        for subIng in subRec[:]:
+            if stIng[0] == subIng[0]:
+                subRec.remove(subIng)
                 
     stRec.sort(key=lambda x:x[3])
     subRec.sort(key=lambda x:x[3])
@@ -472,7 +488,7 @@ def compareIngLists(stAisleIngs, subAisleIngs, strictSubstitution):
             
             for thisIndex, subIng in enumerate(subAisleIngs):
                 thisSimilarity = compareStrings(stIng[4],subIng[4])
-                if maxSimilarity < thisSimilarity < 1 and stIng[1] < subIng[1]:
+                if maxSimilarity < thisSimilarity < 1 and stIng[1] < subIng[1] and not similarToRecipeName(stIng[4]):
                     maxSimilarity = thisSimilarity
                     index = thisIndex
             if index == -1:
@@ -485,7 +501,7 @@ def compareIngLists(stAisleIngs, subAisleIngs, strictSubstitution):
             index = -1
             for thisIndex, stIng in enumerate(stAisleIngs[:]):
                 thisSimilarity = compareStrings(stIng[4],subIng[4])
-                if maxSimilarity < thisSimilarity < 1 and stIng[1] < subIng[1]:
+                if maxSimilarity < thisSimilarity < 1 and stIng[1] < subIng[1] and not similarToRecipeName(stIng[4]):
                     maxSimilarity = thisSimilarity
                     index = thisIndex
             if index != -1:
@@ -500,8 +516,24 @@ def compareIngLists(stAisleIngs, subAisleIngs, strictSubstitution):
 def compareStrings(a,b):
     return SequenceMatcher(None, a, b).ratio()
 
+def similarToRecipeName(ingName):
+    similarity = 0
+    for partOfRecipe in wordArray:
+        thisSimilarity = compareStrings(ingName,partOfRecipe)
+        print("Ähnlichkeit von "+ingName+" und "+partOfRecipe)
+        print(thisSimilarity)
+        if thisSimilarity > similarity:
+            similarity = thisSimilarity
+    if similarity > 0.5:
+        return True
+    return False
+
 #%%
-startRec = getWholeParsedIngList(topRankedRecipes[:1], False)
+completeStartRec = getWholeParsedIngList(topRankedRecipes[:1], False, False)
+parsedIngNoSpiceC = removeSpices(completeStartRec, True)
+completeStartRec = parsedIngNoSpiceC.outArray
+startRec = completeStartRec[0]
+#startRec = getWholeParsedIngList(topRankedRecipes[:1], False)
 topRankedSub = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
 topRankedRec = getWholeParsedIngList(topRankedRecipes, False)
 compArray = getCompArray(topRankedSub, topRankedRec)
@@ -519,6 +551,11 @@ recPool = getWholeParsedIngList(recWithHigherWhoList, False)
 
 substitutedWithPool = substituteWithRecipe(substitutedWithRecipe, recPool, True)
 
+if not completeStartRec[1]:
+    startRec.extend(completeStartRec[1])
+    substitutedWithRecipe.extend(completeStartRec[1])
+    substitutedWithPool.extend(completeStartRec[1])
+    
 print("Startrezept: " + str(startRec))
 print("Erste Sub: " + str(substitutedWithRecipe))
 print("Zweite Sub: " + str(substitutedWithPool))
