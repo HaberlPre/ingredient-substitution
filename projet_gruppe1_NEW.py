@@ -25,9 +25,9 @@ cur=con.cursor()
 
 #%% 
 #meal = "almond-butter"
-meal = "mommas-pasta-and-shrimp-salad"
+#meal = "mommas-pasta-and-shrimp-salad"
 #meal = "easy-beef-goulash"
-#meal = "chicken-and-pumpkin-goulash"
+meal = "chicken-and-pumpkin-goulash"
 #meal = "pizza"
 wordArray = []
 
@@ -302,7 +302,7 @@ def getCompArray(ingArrayList, mealIng): #return array vom gericht mit höchster
             count[i] = len(ingArrayList[i]) / count[i]
         else:
             count[i] = 100
-    print(count)
+    #print(count)
     maxC = min(count) #weil division: min = max übereinstimmung
     for i in range(len(count)): #wenn man mehrmals vorkommt: letzter wert
         if count[i] == maxC:
@@ -520,8 +520,6 @@ def similarToRecipeName(ingName):
     similarity = 0
     for partOfRecipe in wordArray:
         thisSimilarity = compareStrings(ingName,partOfRecipe)
-        print("Ähnlichkeit von "+ingName+" und "+partOfRecipe)
-        print(thisSimilarity)
         if thisSimilarity > similarity:
             similarity = thisSimilarity
     if similarity > 0.5:
@@ -533,7 +531,6 @@ completeStartRec = getWholeParsedIngList(topRankedRecipes[:1], False, False)
 parsedIngNoSpiceC = removeSpices(completeStartRec, True)
 completeStartRec = parsedIngNoSpiceC.outArray
 startRec = completeStartRec[0]
-#startRec = getWholeParsedIngList(topRankedRecipes[:1], False)
 topRankedSub = getWholeParsedIngList(topRankedRecipes, True) #true: ing zum substituten - rezept < 20, sucht gericht (pumpkin-gulash), ; gleich für gesund etc
 topRankedRec = getWholeParsedIngList(topRankedRecipes, False)
 compArray = getCompArray(topRankedSub, topRankedRec)
@@ -551,11 +548,11 @@ recPool = getWholeParsedIngList(recWithHigherWhoList, False)
 
 substitutedWithPool = substituteWithRecipe(substitutedWithRecipe, recPool, True)
 
-if not completeStartRec[1]:
+if not (not completeStartRec[1]):
     startRec.extend(completeStartRec[1])
     substitutedWithRecipe.extend(completeStartRec[1])
     substitutedWithPool.extend(completeStartRec[1])
-    
+  
 print("Startrezept: " + str(startRec))
 print("Erste Sub: " + str(substitutedWithRecipe))
 print("Zweite Sub: " + str(substitutedWithPool))
