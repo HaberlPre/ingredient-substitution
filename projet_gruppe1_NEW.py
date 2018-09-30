@@ -50,7 +50,7 @@ class getTopRankedRecipes():
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `f`.`recipe_id` FROM `feature_table` `f`
                     WHERE `f`.`recipe_id` LIKE '%s' """ % recipestring + """
-                    ORDER BY `f`.`avg_rating` DESC LIMIT 30""") #limit shortens it significantly, currently for ease of use,  AND `f`.`number_of_ratings` > 10 raus, chrashte bei nur einem rezept
+                    ORDER BY `f`.`avg_rating` DESC LIMIT 30""") 
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -66,15 +66,17 @@ class getTopRankedRecipes():
  
 #%%        
 topRankedRecipesClass = getTopRankedRecipes(meal)
-topRankedRecipes = topRankedRecipesClass.outRec #format: liste mit ids = links
+topRankedRecipes = topRankedRecipesClass.outRec
 
 #%% 
+
+# get the top recipes with the highest who score
 class getHealthyRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
                     WHERE `recipe_id` LIKE '%s' """ % recipestring + """
-                    ORDER BY `who_score` DESC LIMIT 30""") #limit shortens it significantly, currently for ease of use; AND `number_of_ratings` > 10 raus
+                    ORDER BY `who_score` DESC LIMIT 30""")
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -89,15 +91,17 @@ class getHealthyRecipes():
  
 #%%        
 HealthyRecipesClass = getHealthyRecipes(meal)
-HealthyRecipes = HealthyRecipesClass.outRec #format: liste mit ids = links
+HealthyRecipes = HealthyRecipesClass.outRec #format: list with recipe ids
 
 #%% 
+
+# get the top recipes with the lowest who score
 class getNotHealthyRecipes():
     def __init__(self, inputString):
         recipestring='%'+inputString+'%'
         cur.execute("""SELECT  `recipe_id` FROM `feature_table`
                     WHERE `recipe_id` LIKE '%s' """ % recipestring + """
-                    ORDER BY `who_score` ASC LIMIT 30""") #limit shortens it significantly, currently for ease of use; AND `number_of_ratings` > 10 raus
+                    ORDER BY `who_score` ASC LIMIT 30""") 
         self.rec=np.array(cur.fetchall(),dtype=str)
         self.outRec=self.output(self.rec)
         
@@ -112,9 +116,11 @@ class getNotHealthyRecipes():
  
 #%%        
 NotHealthyRecipesClass = getNotHealthyRecipes(meal)
-NotHealthyRecipes = NotHealthyRecipesClass.outRec #format: liste mit ids = links
+NotHealthyRecipes = NotHealthyRecipesClass.outRec 
 
 #%%
+
+# get the who score of a current recipe from the feature_table 
 class getRecWho():
     def __init__(self, recID):
         RList=[]
@@ -124,7 +130,7 @@ class getRecWho():
             recIDStr = recIDStr.replace("['", "")
             recIDStr = recIDStr.replace("']", "")
             cur.execute("""SELECT  `who_score` FROM `feature_table`
-                        WHERE `recipe_id` = """ + recIDStr + """ """)  #get the recipe who_score from feature_rable, wieso hier + statt % ?
+                        WHERE `recipe_id` = """ + recIDStr + """ """)
             self.rec=np.array(cur.fetchall(),dtype=str)
             RList.append(self.rec[0])
         self.outRec=self.output(RList)
@@ -136,6 +142,7 @@ class getRecWho():
         return RList
 
 #%% 
+# get the ingredient list of a current recipe
 class getIngredientsFromRecipes():
     def __init__(self, recipes):
         AIList=[]
@@ -152,7 +159,7 @@ class getIngredientsFromRecipes():
         return AIList
 
 #%% 
-class getParsedIngIdFromGIFR(): #hier früher parsedArray
+class getParsedIngId(): 
     def __init__(self, Ring, whoIngName):
         self.outArray = self.output(Ring, whoIngName)
     
@@ -176,6 +183,8 @@ class getParsedIngIdFromGIFR(): #hier früher parsedArray
         return(returnArray)
 
 #%%
+
+# get the count of each ingredient from the current recipe
 class getParsedIngCount():
     def __init__(self, PA):
         self.outArray = self.output(PA)
@@ -190,14 +199,14 @@ class getParsedIngCount():
         for i in range(len(outArray)):
             outArray[i][0] = uniqueIdArray[i]
             for j in range(len(PA)):
-                if outArray[i][0][0] == PA[j][0]: #uniqueIdArray[i][0] === ingr_id                    
-                    #print(outArray[i][0][0])  #outArray[i][1] === count
+                if outArray[i][0][0] == PA[j][0]: 
                     outArray[i][1] = outArray[i][1] + 1
             uniqueIdArray[i].append(str(outArray[i][1]))
         return uniqueIdArray
 
 #%% 
-class getMainIng(): #unsortiert!!!
+# according to the count of the ingredients of current recipe, take  the ingredients with highest count as main ingredients
+class getMainIng():
     def __init__(self, PAC, critBestRec):
         self.outArray = self.output(PAC, critBestRec)
     
@@ -215,7 +224,7 @@ def getCrit(PAC):
     critBestRec = sum/len(PAC)
     return round(2*critBestRec)
 
-class getRestIng(): #unsortiert!!!
+class getRestIng():
     def __init__(self, PAC, critBestRec):
         self.outArray = self.output(PAC, critBestRec)
     
@@ -332,7 +341,7 @@ def getWholeParsedIngList(recArray, sub, mustRemoveSpices = True): #macht nur ei
             List = np.append(WhoArray[i], ingFromArray[i])
             arrIngName.append(List)
         
-        parsedIngArrayC = getParsedIngIdFromGIFR(ingFromArray, arrIngName) #arrIngArray eig nur index 0 nötig (who score)
+        parsedIngArrayC = getParsedIngId(ingFromArray, arrIngName) #arrIngArray eig nur index 0 nötig (who score)
         parsedIngArray = parsedIngArrayC.outArray #format: liste mit allen new ing id (parseding table) von obigen ing
         
         parsedIngArrayCountC = getParsedIngCount(parsedIngArray)
